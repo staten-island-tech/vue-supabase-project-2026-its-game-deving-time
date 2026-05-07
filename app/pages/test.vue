@@ -11,19 +11,28 @@ import type { RapierHelper } from 'three/examples/jsm/Addons.js';
 import { PI } from 'three/tsl';
     const RAPIER = await import('@dimforge/rapier3d-compat')
     await RAPIER.init()
+    const loader = new THREE.TextureLoader();
     type cubeholder = {
         Visual: THREE.Mesh,
         Hitbox: RAPIERtype.RigidBody,
     }
     const createdcubes: cubeholder[] = []
-    function createCube(rotation:{x:number,y:number,z:number},position:{x:number,y:number,z:number},size:number, color:number, world:World,scene:THREE.Scene,type:number,shape:string){
+    function createCube(rotation:{x:number,y:number,z:number},position:{x:number,y:number,z:number},size:number, color:number, world:World,scene:THREE.Scene,type:number,shape:string,texture:string){
+
         const geo = (shape=="cube")?new THREE.BoxGeometry(size,size,size)
-        :new THREE.BoxGeometry(size,size,size)
+        :new THREE.SphereGeometry(size / 2, 32, 32)
 
+        let material
+        if (texture){
+            const textured = loader.load(`/${texture}`);
+            material = new THREE.MeshStandardMaterial({color:color,map:textured})
+        } else{
+            material = new THREE.MeshStandardMaterial({color:color})
+        }
         
-
-        const material = new THREE.MeshBasicMaterial({color: color})
         const cube = new THREE.Mesh(geo,material)
+        cube.castShadow = true;
+        cube.receiveShadow = true;
         scene.add(cube)
 
         const initalrotation:THREE.Euler = new THREE.Euler(rotation.x,rotation.y,rotation.z)
@@ -51,18 +60,46 @@ import { PI } from 'three/tsl';
 
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize( window.innerWidth, window.innerHeight );
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        const ambient = new THREE.AmbientLight(0xffffff, 0.3);
+        scene.add(ambient);
+
+        const sun = new THREE.DirectionalLight(0xfff4e0, 1.2);
+        sun.position.set(10, 20, 10);
+        sun.castShadow = true;
+        sun.shadow.camera.left = -30;
+        sun.shadow.camera.right = 30;
+        sun.shadow.camera.top = 30;
+        sun.shadow.camera.bottom = -30;
+        sun.shadow.camera.near = 0.1;
+        sun.shadow.camera.far = 100;
+        sun.shadow.mapSize.width = 2048;
+        sun.shadow.mapSize.height = 2048;
+        scene.add(sun);
+        const hemi = new THREE.HemisphereLight(0x87ceeb, 0x444422, 0.5);
+        scene.add(hemi);
         document.body.appendChild( renderer.domElement );
         camera.rotation.x = -0.5
         renderer.render(scene,camera)
         const groundgeo = new THREE.BoxGeometry(50,1,50)
-        const groundcolor = new THREE.MeshBasicMaterial({color:0x123881})
+       
+        const texture = loader.load('/grass.png');
+        texture.repeat.set(10, 10);
+        texture.wrapS = THREE.RepeatWrapping;
+        texture.wrapT = THREE.RepeatWrapping;
+        const groundcolor = new THREE.MeshStandardMaterial({map: texture})
         const ground = new THREE.Mesh(groundgeo,groundcolor)
+        ground.receiveShadow = true;
+        ground.castShadow = true;
         ground.position.y = -5
+
+
         scene.add(ground)
         const grobox = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0,-5,0))
         world.createCollider(RAPIER.ColliderDesc.cuboid(25, 0.5, 25), grobox)
 
-        const plr = createCube({x: Math.PI/3, y: Math.PI/3, z: Math.PI/3}, {x: 2, y: 2, z: 2}, 1, 0x00FF, world, scene,1)
+        const plr = createCube({x: Math.PI/3, y: Math.PI/3, z: Math.PI/3}, {x: 2, y: 2, z: 2}, 1, 0xFFFFFF, world, scene,1,"s","ice.jpg")
         const keysdown:Record<string,boolean> = {}
         window.addEventListener("keydown",(key:KeyboardEvent)=>{keysdown[key.code] = true;console.log(key.code)})
         window.addEventListener("keyup",(key:KeyboardEvent)=>keysdown[key.code] = false)
