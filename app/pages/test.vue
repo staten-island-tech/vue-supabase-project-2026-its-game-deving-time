@@ -45,7 +45,9 @@ import { PI } from 'three/tsl';
         } else{
             hitboxdesc = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(position.x,position.y,position.z).setRotation({x:quater.x,y:quater.y,z:quater.z,w:quater.w}))
         }
-        const collider = world.createCollider(RAPIER.ColliderDesc.cuboid(size/2, size/2, size/2), hitboxdesc)
+        const coldesc = (shape=="cube")?RAPIER.ColliderDesc.cuboid(size/2, size/2, size/2)
+        :RAPIER.ColliderDesc.ball(size)
+        const collider = world.createCollider(coldesc, hitboxdesc)
         createdcubes.push({Visual: cube, Hitbox: hitboxdesc})
         return {Collider:collider,Body:hitboxdesc,Visual:cube}
     }
@@ -143,7 +145,7 @@ import { PI } from 'three/tsl';
                 plr.Body.applyImpulse({ x: 0, y: 1, z: 0 }, true)
                 isJumping = true
             }
-            dir.normalize().multiplyScalar(0.0025);
+            dir.normalize().multiplyScalar(0.005);
             if (keysdown['KeyE']){camera.position.y += 1}
             if (keysdown['KeyQ']){camera.position.y -= 1}
             const force = new RAPIER.Vector3(dir.x * 50, 0, dir.z * 50)
