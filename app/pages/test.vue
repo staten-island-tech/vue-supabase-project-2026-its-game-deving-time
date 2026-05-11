@@ -22,12 +22,10 @@ import { PI } from 'three/tsl';
         const geo = (shape=="cube")?new THREE.BoxGeometry(size,size,size)
         :new THREE.SphereGeometry(size / 2, 32, 32)
 
-        let material
+        let material = new THREE.MeshStandardMaterial({color:color})
         if (texture){
             const textured = loader.load(`/${texture}`);
             material = new THREE.MeshStandardMaterial({color:color,map:textured})
-        } else{
-            material = new THREE.MeshStandardMaterial({color:color})
         }
         
         const cube = new THREE.Mesh(geo,material)
@@ -53,7 +51,7 @@ import { PI } from 'three/tsl';
     }
 
 
-
+    let ball = false
     onMounted(()=>{
         const clock = new THREE.Clock();
         const world = new RAPIER.World({x:0,y:-9.81,z:0})
@@ -101,7 +99,7 @@ import { PI } from 'three/tsl';
         const grobox = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0,-5,0))
         world.createCollider(RAPIER.ColliderDesc.cuboid(25, 0.5, 25), grobox)
 
-        const plr = createCube({x: Math.PI/3, y: Math.PI/3, z: Math.PI/3}, {x: 2, y: 2, z: 2}, 1, 0xFFFFFF, world, scene,1,"s","ice.jpg")
+        let plr = createCube({x: 0, y: 0, z: 0}, {x: 2, y: 2, z: 2}, 1, 0xFFFFFF, world, scene,1,"a","ice.jpg")
         const keysdown:Record<string,boolean> = {}
         window.addEventListener("keydown",(key:KeyboardEvent)=>{keysdown[key.code] = true;console.log(key.code)})
         window.addEventListener("keyup",(key:KeyboardEvent)=>keysdown[key.code] = false)
@@ -127,6 +125,26 @@ import { PI } from 'three/tsl';
             if (keysdown['KeyS']) dir.z += 1;
             if (keysdown['KeyA']) dir.x -= 1;
             if (keysdown['KeyD']) dir.x += 1;
+            if (keysdown['KeyE']){
+                keysdown['KeyE'] = false
+                const temp = plr
+                const pos = temp.Body.translation();
+                let type
+                if (ball){
+                    type = "ball"
+                } else {
+                    type = "cube"
+                }
+                ball = !ball
+                plr = createCube({x: 0, y: 0, z: 0}, {x: pos.x, y: pos.y, z: pos.z}, 1, 0xFFFFFF, world, scene,1,type,"ice.jpg")
+                const oldIndex = createdcubes.findIndex(c => c.Hitbox === temp.Body);
+                if (oldIndex !== -1) createdcubes.splice(oldIndex, 1);
+                scene.remove(temp.Visual);
+                temp.Visual.geometry.dispose();
+                temp.Visual.material.dispose();
+                world.removeRigidBody(temp.Body);
+                world.removeCollider(temp.Collider, false);
+            }
             const pos = plr.Body.translation()
 
             const origin = {
