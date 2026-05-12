@@ -16,11 +16,12 @@ import { PI } from 'three/tsl';
         Visual: THREE.Mesh,
         Hitbox: RAPIERtype.RigidBody,
     }
+    
     const createdcubes: cubeholder[] = []
     function createCube(rotation:{x:number,y:number,z:number},position:{x:number,y:number,z:number},size:number, color:number, world:World,scene:THREE.Scene,type:number,shape:string,texture:string){
 
         const geo = (shape=="cube")?new THREE.BoxGeometry(size,size,size)
-        :new THREE.SphereGeometry(size / 2, 32, 32)
+        :new THREE.SphereGeometry(size/2, 32, 16)
 
         let material = new THREE.MeshStandardMaterial({color:color})
         if (texture){
@@ -44,7 +45,7 @@ import { PI } from 'three/tsl';
             hitboxdesc = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(position.x,position.y,position.z).setRotation({x:quater.x,y:quater.y,z:quater.z,w:quater.w}))
         }
         const coldesc = (shape=="cube")?RAPIER.ColliderDesc.cuboid(size/2, size/2, size/2)
-        :RAPIER.ColliderDesc.ball(size)
+        :RAPIER.ColliderDesc.ball(size/2)
         const collider = world.createCollider(coldesc, hitboxdesc)
         createdcubes.push({Visual: cube, Hitbox: hitboxdesc})
         return {Collider:collider,Body:hitboxdesc,Visual:cube}
@@ -52,7 +53,9 @@ import { PI } from 'three/tsl';
 
 
     let ball = false
+    
     onMounted(()=>{
+        const brij = new Audio('/bruh.mp3')
         const clock = new THREE.Clock();
         const world = new RAPIER.World({x:0,y:-9.81,z:0})
         const scene = new THREE.Scene();
@@ -159,11 +162,12 @@ import { PI } from 'three/tsl';
             if (hit) {
                 isJumping = false
             }
-             if (keysdown['Space'] && !isJumping && grounded) {
-                plr.Body.applyImpulse({ x: 0, y: 1, z: 0 }, true)
+             if (keysdown['Space'] && ((!isJumping && grounded)||ball)) {
+                brij.play()
+                plr.Body.applyImpulse({ x: 0, y: (ball==true)?0.25:1, z: 0 }, true)
                 isJumping = true
             }
-            dir.normalize().multiplyScalar(0.005);
+            dir.normalize().multiplyScalar(0.0025);
             if (keysdown['KeyE']){camera.position.y += 1}
             if (keysdown['KeyQ']){camera.position.y -= 1}
             const force = new RAPIER.Vector3(dir.x * 50, 0, dir.z * 50)
