@@ -18,10 +18,10 @@ import { PI } from 'three/tsl';
     }
     
     const createdcubes: cubeholder[] = []
-    function createCube(rotation:{x:number,y:number,z:number},position:{x:number,y:number,z:number},size:number, color:number, world:World,scene:THREE.Scene,type:number,shape:string,texture:string){
+    function createCube(rotation:{x:number,y:number,z:number},position:{x:number,y:number,z:number},size:{x:number,y:number,z:number}, color:number, world:World,scene:THREE.Scene,type:number,shape:string,texture:string){
 
-        const geo = (shape=="cube")?new THREE.BoxGeometry(size,size,size)
-        :new THREE.SphereGeometry(size/2, 32, 16)
+        const geo = (shape=="rect")?new THREE.BoxGeometry(size.x,size.y,size.z)
+        :new THREE.SphereGeometry(size.x/2, 32, 16)
 
         let material = new THREE.MeshStandardMaterial({color:color})
         if (texture){
@@ -44,16 +44,16 @@ import { PI } from 'three/tsl';
         } else{
             hitboxdesc = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(position.x,position.y,position.z).setRotation({x:quater.x,y:quater.y,z:quater.z,w:quater.w}))
         }
-        const coldesc = (shape=="cube")?RAPIER.ColliderDesc.cuboid(size/2, size/2, size/2)
-        :RAPIER.ColliderDesc.ball(size/2)
+        const coldesc = (shape=="rect")?RAPIER.ColliderDesc.cuboid(size.x/2, size.y/2, size.z/2)
+        :RAPIER.ColliderDesc.ball(size.x/2)
         const collider = world.createCollider(coldesc, hitboxdesc)
         createdcubes.push({Visual: cube, Hitbox: hitboxdesc})
         return {Collider:collider,Body:hitboxdesc,Visual:cube}
     }
 
-
-    let ball = false
     
+    let ball = false
+    let fuel = 250
     onMounted(()=>{
         const brij = new Audio('/bruh.mp3')
         const clock = new THREE.Clock();
@@ -83,28 +83,12 @@ import { PI } from 'three/tsl';
         const hemi = new THREE.HemisphereLight(0x87ceeb, 0x444422, 0.5);
         scene.add(hemi);
         document.body.appendChild( renderer.domElement );
-        camera.rotation.x = -0.5
+        camera.rotation.x = -0.825
         renderer.render(scene,camera)
-        const groundgeo = new THREE.BoxGeometry(50,1,50)
-       
-        const texture = loader.load('/grass.png');
-        texture.repeat.set(10, 10);
-        texture.wrapS = THREE.RepeatWrapping;
-        texture.wrapT = THREE.RepeatWrapping;
-        const groundcolor = new THREE.MeshStandardMaterial({map: texture})
-        const ground = new THREE.Mesh(groundgeo,groundcolor)
-        ground.receiveShadow = true;
-        ground.castShadow = true;
-        ground.position.y = -5
-
-
-        scene.add(ground)
-        const grobox = world.createRigidBody(RAPIER.RigidBodyDesc.fixed().setTranslation(0,-5,0))
-        world.createCollider(RAPIER.ColliderDesc.cuboid(25, 0.5, 25), grobox)
-
-        let plr = createCube({x: 0, y: 0, z: 0}, {x: 2, y: 2, z: 2}, 1, 0xFFFFFF, world, scene,1,"a","ice.jpg")
+        const ground = createCube({x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x:50,y:1,z:50}, 0xFFFFFF, world, scene,2,"rect","grass.png")
+        let plr = createCube({x: 0, y: 0, z: 0}, {x: 2, y: 2, z: 2}, {x:1,y:0,z:0}, 0xFFFFFF, world, scene,1,"a","rb4.png")
         const keysdown:Record<string,boolean> = {}
-        window.addEventListener("keydown",(key:KeyboardEvent)=>{keysdown[key.code] = true;console.log(key.code)})
+        window.addEventListener("keydown",(key:KeyboardEvent)=>keysdown[key.code] = true)
         window.addEventListener("keyup",(key:KeyboardEvent)=>keysdown[key.code] = false)
 
 
@@ -118,10 +102,10 @@ import { PI } from 'three/tsl';
                 x.Visual.position.set(pos.x, pos.y, pos.z)
                 x.Visual.quaternion.set(rot.x, rot.y, rot.z, rot.w)
             })
-            const pos2 = grobox.translation()
-            const rot2 = grobox.rotation()
-            ground.position.set(pos2.x, pos2.y, pos2.z)
-            ground.quaternion.set(rot2.x, rot2.y, rot2.z, rot2.w)
+            const pos2 = ground.Body.translation()
+            const rot2 = ground.Body.rotation()
+            ground.Visual.position.set(pos2.x, pos2.y, pos2.z)
+            ground.Visual.quaternion.set(rot2.x, rot2.y, rot2.z, rot2.w)
             const dt = clock.getDelta();
             const dir = new THREE.Vector3();
             if (keysdown['KeyW']){ dir.z -= 1};
@@ -136,10 +120,10 @@ import { PI } from 'three/tsl';
                 if (ball){
                     type = "ball"
                 } else {
-                    type = "cube"
+                    type = "rect"
                 }
                 ball = !ball
-                plr = createCube({x: 0, y: 0, z: 0}, {x: pos.x, y: pos.y, z: pos.z}, 1, 0xFFFFFF, world, scene,1,type,"ice.jpg")
+                plr = createCube({x: 0, y: 0, z: 0}, {x: pos.x, y: pos.y, z: pos.z}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene,1,type,"ice.jpg")
                 const oldIndex = createdcubes.findIndex(c => c.Hitbox === temp.Body);
                 if (oldIndex !== -1) createdcubes.splice(oldIndex, 1);
                 scene.remove(temp.Visual);
@@ -162,14 +146,16 @@ import { PI } from 'three/tsl';
             if (hit) {
                 isJumping = false
             }
-             if (keysdown['Space'] && ((!isJumping && grounded)||ball)) {
+            if (keysdown['Space'] && ((!isJumping && grounded)||(ball&&fuel>0))) {
+                fuel--
                 brij.play()
                 plr.Body.applyImpulse({ x: 0, y: (ball==true)?0.25:1, z: 0 }, true)
                 isJumping = true
             }
+            if (!isJumping && grounded){
+                fuel = 250
+            }
             dir.normalize().multiplyScalar(0.0025);
-            if (keysdown['KeyE']){camera.position.y += 1}
-            if (keysdown['KeyQ']){camera.position.y -= 1}
             const force = new RAPIER.Vector3(dir.x * 50, 0, dir.z * 50)
             plr.Body.applyImpulse(force, true)
             const p = plr.Body.translation()
@@ -177,9 +163,9 @@ import { PI } from 'three/tsl';
             plr.Visual.position.set(p.x, p.y, p.z)
             plr.Visual.quaternion.set(r.x, r.y, r.z, r.w)
             camera.position.x = plr.Visual.position.x
-            camera.position.y = plr.Visual.position.y+3
+            camera.position.y = plr.Visual.position.y+6
             
-            camera.position.z = plr.Visual.position.z+3
+            camera.position.z = plr.Visual.position.z+6
             renderer.render(scene, camera)
         }
         animate()
