@@ -9,6 +9,7 @@ import * as THREE from 'three';
     import type RAPIERtype from '@dimforge/rapier3d-compat'
 import type { RapierHelper } from 'three/examples/jsm/Addons.js';
 import { PI } from 'three/tsl';
+import { randInt } from 'three/src/math/MathUtils.js';
     const RAPIER = await import('@dimforge/rapier3d-compat')
     await RAPIER.init()
     const loader = new THREE.TextureLoader();
@@ -16,9 +17,23 @@ import { PI } from 'three/tsl';
         Visual: THREE.Mesh,
         Hitbox: RAPIERtype.RigidBody,
     }
-    
-    const createdcubes: cubeholder[] = []
-    function createCube(rotation:{x:number,y:number,z:number},position:{x:number,y:number,z:number},size:{x:number,y:number,z:number}, color:number, world:World,scene:THREE.Scene,type:number,shape:string,texture:string){
+    type enemy = {
+        Speed: number,
+        Health: number,
+        MaxHP: number
+    }
+    const createdObjects: cubeholder[] = []
+    const enemies: (enemy&cubeholder)[] = []
+    function createObject(
+    rotation:{x:number,y:number,z:number},
+    position:{x:number,y:number,z:number},
+    size:{x:number,y:number,z:number}, 
+    color:number, 
+    world:World,scene:THREE.Scene,
+    type:number,
+    shape:string,
+    texture:string,
+    enemydata?:enemy){
 
         const geo = (shape=="rect")?new THREE.BoxGeometry(size.x,size.y,size.z)
         :new THREE.SphereGeometry(size.x/2, 32, 16)
@@ -47,16 +62,21 @@ import { PI } from 'three/tsl';
         const coldesc = (shape=="rect")?RAPIER.ColliderDesc.cuboid(size.x/2, size.y/2, size.z/2)
         :RAPIER.ColliderDesc.ball(size.x/2)
         const collider = world.createCollider(coldesc, hitboxdesc)
-        createdcubes.push({Visual: cube, Hitbox: hitboxdesc})
+        createdObjects.push({Visual: cube, Hitbox: hitboxdesc})
+        if (enemydata!==undefined){
+            enemies.push({
+                Visual: cube, 
+                Hitbox: hitboxdesc,
+                Speed: enemydata.Speed,
+                Health: enemydata.Health,
+                MaxHP: enemydata.MaxHP
+            })
+        }
         return {Collider:collider,Body:hitboxdesc,Visual:cube}
     }
 
-    
-    let ball = false
-    let fuel = 250
     onMounted(()=>{
         const brij = new Audio('/bruh.mp3')
-        const clock = new THREE.Clock();
         const world = new RAPIER.World({x:0,y:-9.81,z:0})
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera( 75, window.innerWidth / window.innerHeight, 0.1, 1000 );
@@ -85,53 +105,40 @@ import { PI } from 'three/tsl';
         document.body.appendChild( renderer.domElement );
         camera.rotation.x = -0.825
         renderer.render(scene,camera)
-        const ground = createCube({x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x:50,y:1,z:50}, 0xFFFFFF, world, scene,2,"rect","grass.png")
-        let plr = createCube({x: 0, y: 0, z: 0}, {x: 2, y: 2, z: 2}, {x:1,y:0,z:0}, 0xFFFFFF, world, scene,1,"a","rb4.png")
+        const ground = createObject({x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x:50,y:1,z:50}, 0xFFFFFF, world, scene,2,"rect","grass.png")
+        let plr = createObject({x: 0, y: 0, z: 0}, {x: 2, y: 2, z: 2}, {x:1,y:0,z:0}, 0xFFFFFF, world, scene,1,"a","rb4.png")
         const keysdown:Record<string,boolean> = {}
         window.addEventListener("keydown",(key:KeyboardEvent)=>keysdown[key.code] = true)
         window.addEventListener("keyup",(key:KeyboardEvent)=>keysdown[key.code] = false)
-
-
-        let isJumping: Boolean = false
+        for (let i=1;i<1000;i++){
+        createObject({x: 0, y: 0, z: 0}, {x: randInt(-25,25), y: randInt(30,60), z: randInt(-25,25)}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene,1,"rect","evil.png",{Speed:3,Health:1,MaxHP:1})     
+        }
         const animate = (): void => {
             requestAnimationFrame(animate)
             world.step()
-            createdcubes.forEach((x)=>{
+            createdObjects.forEach((x)=>{
                 const pos = x.Hitbox.translation()
                 const rot = x.Hitbox.rotation()
                 x.Visual.position.set(pos.x, pos.y, pos.z)
                 x.Visual.quaternion.set(rot.x, rot.y, rot.z, rot.w)
             })
+            enemies.forEach((x)=>{
+                const lookVector = new THREE.Vector3()
+                .subVectors(plr.Visual.position, x.Visual.position)
+                .normalize()
+                .multiplyScalar(x.Speed/10);;
+                x.Hitbox.applyImpulse(lookVector, true)
+            })
             const pos2 = ground.Body.translation()
             const rot2 = ground.Body.rotation()
             ground.Visual.position.set(pos2.x, pos2.y, pos2.z)
             ground.Visual.quaternion.set(rot2.x, rot2.y, rot2.z, rot2.w)
-            const dt = clock.getDelta();
+
             const dir = new THREE.Vector3();
             if (keysdown['KeyW']){ dir.z -= 1};
             if (keysdown['KeyS']) dir.z += 1;
             if (keysdown['KeyA']) dir.x -= 1;
             if (keysdown['KeyD']) dir.x += 1;
-            if (keysdown['KeyE']){
-                keysdown['KeyE'] = false
-                const temp = plr
-                const pos = temp.Body.translation();
-                let type
-                if (ball){
-                    type = "ball"
-                } else {
-                    type = "rect"
-                }
-                ball = !ball
-                plr = createCube({x: 0, y: 0, z: 0}, {x: pos.x, y: pos.y, z: pos.z}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene,1,type,"ice.jpg")
-                const oldIndex = createdcubes.findIndex(c => c.Hitbox === temp.Body);
-                if (oldIndex !== -1) createdcubes.splice(oldIndex, 1);
-                scene.remove(temp.Visual);
-                temp.Visual.geometry.dispose();
-                temp.Visual.material.dispose();
-                world.removeRigidBody(temp.Body);
-                world.removeCollider(temp.Collider, false);
-            }
             const pos = plr.Body.translation()
 
             const origin = {
@@ -143,17 +150,8 @@ import { PI } from 'three/tsl';
             const ray = new RAPIER.Ray(origin, { x: 0, y: -1, z: 0 })
             const hit = world.castRay(ray, 0.15, true)
             const grounded = hit !== null
-            if (hit) {
-                isJumping = false
-            }
-            if (keysdown['Space'] && ((!isJumping && grounded)||(ball&&fuel>0))) {
-                fuel--
-                brij.play()
-                plr.Body.applyImpulse({ x: 0, y: (ball==true)?0.25:1, z: 0 }, true)
-                isJumping = true
-            }
-            if (!isJumping && grounded){
-                fuel = 250
+            if (keysdown['Space'] && grounded) {
+                plr.Body.applyImpulse({ x: 0, y: 1, z: 0 }, true)
             }
             dir.normalize().multiplyScalar(0.0025);
             const force = new RAPIER.Vector3(dir.x * 50, 0, dir.z * 50)
