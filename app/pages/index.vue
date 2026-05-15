@@ -1,7 +1,9 @@
 <template>
-    <div class = "flex justify-center">
-        <h3 class = "text-blue-600"><b>Project</b></h3>
-    </div>
+  <div class="p-10">
+    <button class="btn btn-primary">
+      DaisyUI Works
+    </button>
+  </div>
 </template>
 
 <script setup>
