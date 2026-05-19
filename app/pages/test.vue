@@ -16,11 +16,12 @@ import { randInt } from 'three/src/math/MathUtils.js';
     type cubeholder = {
         Visual: THREE.Mesh,
         Hitbox: RAPIERtype.RigidBody,
+        Box:THREE.Box3
     }
     type enemy = {
         Speed: number,
         Health: number,
-        MaxHP: number
+        MaxHP: number,
     }
     const createdObjects: cubeholder[] = []
     const enemies: (enemy&cubeholder)[] = []
@@ -62,17 +63,19 @@ import { randInt } from 'three/src/math/MathUtils.js';
         const coldesc = (shape=="rect")?RAPIER.ColliderDesc.cuboid(size.x/2, size.y/2, size.z/2)
         :RAPIER.ColliderDesc.ball(size.x/2)
         const collider = world.createCollider(coldesc, hitboxdesc)
-        createdObjects.push({Visual: cube, Hitbox: hitboxdesc})
+        const box3 = new THREE.Box3().setFromObject(cube)
+        createdObjects.push({Visual: cube, Hitbox: hitboxdesc,Box:box3})
         if (enemydata!==undefined){
             enemies.push({
                 Visual: cube, 
                 Hitbox: hitboxdesc,
                 Speed: enemydata.Speed,
                 Health: enemydata.Health,
-                MaxHP: enemydata.MaxHP
+                MaxHP: enemydata.MaxHP,
+                Box:box3
             })
         }
-        return {Collider:collider,Body:hitboxdesc,Visual:cube}
+        return {Collider:collider,Body:hitboxdesc,Visual:cube,Box:box3}
     }
 
     onMounted(()=>{
@@ -110,9 +113,17 @@ import { randInt } from 'three/src/math/MathUtils.js';
         const keysdown:Record<string,boolean> = {}
         window.addEventListener("keydown",(key:KeyboardEvent)=>keysdown[key.code] = true)
         window.addEventListener("keyup",(key:KeyboardEvent)=>keysdown[key.code] = false)
-        for (let i=1;i<1000;i++){
-        createObject({x: 0, y: 0, z: 0}, {x: randInt(-25,25), y: randInt(30,60), z: randInt(-25,25)}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene,1,"rect","evil.png",{Speed:3,Health:1,MaxHP:1})     
+        createObject({x: 0, y: 0, z: 0}, {x: randInt(-25,25), y: randInt(30,60), z: randInt(-25,25)}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene,1,"rect","evil.png",{Speed:1,Health:1,MaxHP:1})     
+        
+        function checkCollision(object:{Box:THREE.Box3,Mesh:THREE.Mesh},plr:{Box:THREE.Box3,Mesh:THREE.Mesh}) {
+            const sphere = new THREE.Sphere()
+            const sphere2 = new THREE.Sphere()
+            object.Box.setFromObject(object.Mesh);
+            plr.Box.setFromObject(plr.Mesh).getBoundingSphere(sphere);
+            console.log(object.Box.intersectsSphere(sphere))
+            return object.Box.intersectsSphere(sphere)
         }
+        let reloading = false
         const animate = (): void => {
             requestAnimationFrame(animate)
             world.step()
@@ -128,7 +139,12 @@ import { randInt } from 'three/src/math/MathUtils.js';
                 .normalize()
                 .multiplyScalar(x.Speed/10);;
                 x.Hitbox.applyImpulse(lookVector, true)
+                if (checkCollision({Box:x.Box,Mesh:x.Visual},{Box:plr.Box,Mesh:plr.Visual})==true&&!reloading){
+                    reloading = true
+                    location.reload()
+                }
             })
+            
             const pos2 = ground.Body.translation()
             const rot2 = ground.Body.rotation()
             ground.Visual.position.set(pos2.x, pos2.y, pos2.z)
