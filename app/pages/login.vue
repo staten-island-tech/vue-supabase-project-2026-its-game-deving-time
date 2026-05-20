@@ -13,12 +13,9 @@
 </template>
 
 <script setup>
-const router = useRouter()
-
 const supabase = useSupabaseClient()
 const username = ref('')
 const password = ref('')
-
 const {data, error} = await supabase.from(`Players`).select('*')
 if (error) throw error;
 console.log(data)
