@@ -1,6 +1,6 @@
 <template>
     <div class = "flex justify-center items-center w-full h-screen bg-amber-500">
-        <fieldset class="h-60 fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+        <fieldset v-if="status === `L`" class="h-60 fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
             <label class="label">Username</label>
             <input type="text" class="input" placeholder="Username" v-model="username"/>
 
@@ -8,6 +8,8 @@
             <input type="password" class="input" placeholder="Password" v-model="password"/>
 
             <button class="btn btn-neutral mt-4" @click = "login">Login</button>
+
+            <button>Sign up?</button>
         </fieldset>
     </div>
 </template>
@@ -16,6 +18,8 @@
 const supabase = useSupabaseClient()
 const username = ref('')
 const password = ref('')
+const status = ref('L')
+
 const {data, error} = await supabase.from(`Players`).select('*')
 if (error) throw error;
 console.log(data)
