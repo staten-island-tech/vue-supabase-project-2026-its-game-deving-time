@@ -17,10 +17,13 @@
     "three": "^0.184.0",
     "typescript": "^6.0.3",
     "vue": "^3.5.33",
-    "vue-router": "^5.0.6"
+    "vue-router": "^5.0.6",
+    "ws": "^8.20.1"
   },
   "devDependencies": {
+    "@types/node": "^25.9.1",
     "@types/three": "^0.184.0",
+    "@types/ws": "^8.18.1",
     "daisyui": "^5.5.20",
     "vite": "^7.3.2"
   }
