@@ -77,6 +77,11 @@ function isPasswordValid(password: String){
         errorMessage.value = "Passwords should be more than 8 characters long.";
         (document.getElementById('errorModal') as HTMLDialogElement).showModal()
         return false
+    } else if (password.includes(" ")){
+        errorMessageTitle.value = "Invalid Password"
+        errorMessage.value = "Passwords should not contain spaces.";
+        (document.getElementById('errorModal') as HTMLDialogElement).showModal()
+        return false
     }
     return true
 }

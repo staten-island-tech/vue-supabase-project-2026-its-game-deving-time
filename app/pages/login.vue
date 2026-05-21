@@ -1,6 +1,7 @@
 <template>
     <div class = "flex justify-center items-center w-full h-screen bg-amber-500">
-        <fieldset class="h-60 fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+        <fieldset class="h-70 fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+            <h1 class = "justify-self-center text-lg"><b>Log In</b></h1>
             <label class="label">Username</label>
             <input type="text" class="input" placeholder="Username" v-model="username"/>
 
