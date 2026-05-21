@@ -1,6 +1,6 @@
 <template>
     <div class = "flex justify-center items-center w-full h-screen bg-amber-500">
-        <fieldset v-if="status === `L`" class="h-60 fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+        <fieldset class="h-60 fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
             <label class="label">Username</label>
             <input type="text" class="input" placeholder="Username" v-model="username"/>
 
@@ -11,32 +11,37 @@
 
             <button>Sign up?</button>
         </fieldset>
+        <dialog id="errorModal" class="modal">
+        <div class="modal-box">
+            <h3 class="text-lg text-center font-bold">Invalid Loggin Credentials</h3>
+            <p class="py-4">Check your password and username. Are you sure you are entering the correct creentials?</p>
+            <div class="modal-action">
+            <form method="dialog">
+                <button class="btn">Exit</button>
+            </form>
+            </div>
+        </div>
+        </dialog>
     </div>
 </template>
 
-<script setup>
+<script lang = "ts" setup>
 const supabase = useSupabaseClient()
 const username = ref('')
 const password = ref('')
-const status = ref('L')
-
-const {data, error} = await supabase.from(`Players`).select('*')
-if (error) throw error;
-console.log(data)
 
 async function login(){
-    console.log(username.value, password.value)
-    const {data, error} = await supabase.from(`Players`).select('*').eq("Username", username.value)
-    if (error) throw error;
-    
-    try{
-        if ((data.length > 0) && (data[0].Password === password.value)){
-            await navigateTo('/test')
-        }
-    }catch (err){
-        console.log(err)
+    const { data, error } = await supabase.auth.signInWithPassword({
+    email: username.value + '@gmail.com',
+    password: password.value
+    })
+
+    if (error){
+        (document.getElementById('errorModal') as HTMLDialogElement).showModal() 
+    } else{
+        await navigateTo('/test')
     }
-   
+
 }
 
 

@@ -18,7 +18,7 @@
     </div>
     </div>
     <!-- Login (and no this comment isn't AI generated) -->
-    <signin></signin>
+    <login></login>
     <!--Footer-->
     <footer class="footer footer-horizontal footer-center bg-primary text-primary-content p-10">
     <aside>
