@@ -18,7 +18,7 @@
     </div>
     </div>
     <!-- Login (and no this comment isn't AI generated) -->
-    <login></login>
+    <signin></signin>
     <!--Footer-->
     <footer class="footer footer-horizontal footer-center bg-primary text-primary-content p-10">
     <aside>
@@ -45,6 +45,7 @@
 
 <script setup>
 import login from './login.vue';
+import signin from './signin.vue';
 
 
 </script>
