@@ -91,25 +91,19 @@
             }
             return {Collider: collider, Body: hitboxdesc, Visual: cube, Box: box3, OBBLocal: obbLocal, OBBWorld: obbWorld}
         }
-        function removeObject(scene:THREE.Scene, world:RAPIERtype.World, mesh:THREE.Mesh, rigidBody:RAPIERtype.RigidBody, collider:RAPIERtype.Collider) {
-            world.removeCollider(collider, true);
-            world.removeRigidBody(rigidBody);
-
-            scene.remove(mesh);
-            mesh.geometry.dispose();
-
-            if (Array.isArray(mesh.material)) {
-                mesh.material.forEach(m => m.dispose());
-            } else {
-                mesh.material.dispose();
-            }
-        }
     onMounted(()=>{
         const brij = new Audio('/bruh.mp3')
         const world = new RAPIER.World({x:0, y:-9.81, z:0})
         const scene = new THREE.Scene();
         const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const textureLoader = new THREE.TextureLoader();
 
+        textureLoader.load('/sky.png', (texture) => {
+            texture.mapping = THREE.EquirectangularReflectionMapping;
+            texture.colorSpace = THREE.SRGBColorSpace;
+
+            scene.background = texture;
+        });
         const renderer = new THREE.WebGLRenderer();
         renderer.setSize(window.innerWidth, window.innerHeight);
         renderer.shadowMap.enabled = true;
@@ -132,16 +126,17 @@
         const hemi = new THREE.HemisphereLight(0x87ceeb, 0x444422, 0.5);
         scene.add(hemi);
         document.body.appendChild(renderer.domElement);
-        camera.rotation.x = -0.825
+        camera.rotation.x = -0.45
         renderer.render(scene, camera)
-        const ground = createObject({x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x:50,y:1,z:50}, 0xFFFFFF, world, scene, 2, "rect", "grass.png")
+        createObject({x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x:25,y:1,z:25}, 0xFFFFFF, world, scene, 2, "rect", "grass.png")
+        createObject({x: 0.45, y: 0, z: 0}, {x: 0, y: 5, z: -22}, {x:25,y:1,z:25}, 0xFFFFFF, world, scene, 2, "rect", "grass.png")
+        createObject({x: 0, y: 0, z: 0}, {x: 0, y: 10.35, z: -37.9}, {x:25,y:1,z:10}, 0xFFFFFF, world, scene, 2, "rect", "grass.png")
+        createObject({x: -0.45, y: 0, z: 0}, {x: 0, y: 5, z: -47.9}, {x:25,y:1,z:10}, 0xFFFFFF, world, scene, 2, "rect", "grass.png")
+
         let plr = createObject({x: 0, y: 0, z: 0}, {x: 2, y: 2, z: 2}, {x:1,y:0,z:0}, 0xFFFFFF, world, scene, 1, "a", "rb4.png")
         const keysdown: Record<string,boolean> = {}
         window.addEventListener("keydown", (key: KeyboardEvent) => keysdown[key.code] = true)
         window.addEventListener("keyup", (key: KeyboardEvent) => keysdown[key.code] = false)
-        for (let i=1;i<20;i++){
-        createObject({x: 0, y: 0, z: 0}, {x: randInt(-25,25), y: randInt(30,60), z: randInt(-25,25)}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene, 1, "rect", "evil.png", {Speed:1, Health:1, MaxHP:1})     
-        }
         function checkCollision(
             object: {OBBLocal: OBB, OBBWorld: OBB, Visual: THREE.Mesh},
             plr: {OBBLocal: OBB, OBBWorld: OBB, Visual: THREE.Mesh}
@@ -152,6 +147,7 @@
             plr.OBBWorld.copy(plr.OBBLocal).applyMatrix4(plr.Visual.matrixWorld);
             return object.OBBWorld.intersectsOBB(plr.OBBWorld);
         }
+        //createObject({x: 0, y: 0, z: 0}, {x: randInt(-25,25), y: randInt(30,60), z: randInt(-25,25)}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene, 1, "rect", "evil.png", {Speed:1, Health:1, MaxHP:1})  
         let hp = 3
         let iframes = 0
         let reloading = false
@@ -168,19 +164,18 @@
                 x.OBBWorld.copy(x.OBBLocal).applyMatrix4(x.Visual.matrixWorld);
             })
             enemies.forEach((x)=>{
-                const lookVector = new THREE.Vector3()
-                .subVectors(plr.Visual.position, x.Visual.position)
-                .normalize()
-                .multiplyScalar(x.Speed/10);
-                x.Hitbox.applyImpulse(lookVector, true)
+                if (x.Visual.position.distanceTo(plr.Visual.position)<=30){
+                    const lookVector = new THREE.Vector3()
+                    .subVectors(plr.Visual.position, x.Visual.position)
+                    .normalize()
+                    .multiplyScalar(x.Speed/10);
+                    x.Hitbox.applyImpulse(lookVector, true)
+                }
                 if (checkCollision({OBBLocal:x.OBBLocal, OBBWorld:x.OBBWorld, Visual:x.Visual}, {OBBLocal:plr.OBBLocal, OBBWorld:plr.OBBWorld, Visual:plr.Visual}) && !reloading && iframes==0){
                     iframes=120
                     hp--
                     if (hp==0){
                         reloading = true
-                        enemies.forEach(enemy=>{
-                            removeObject(scene,world,enemy.Visual,enemy.Hitbox,enemy.Collider)
-                        })
                         for (let i=1;i<100;i++){
                             createObject({x: 0, y: 0, z: 0}, {x: plr.Visual.position.x+randInt(-1,1)/10000, y: plr.Visual.position.y+randInt(-1,1)/10000, z: plr.Visual.position.z+randInt(-1,1)/10000}, {x:0.3,y:0.3,z:0.3}, 0xFFFFFF, world, scene, 1, "a", "rb4.png")    
                         }
@@ -188,26 +183,20 @@
                     }
                 }
             })
-            console.log(hp)
             if (hp==3){
                 plr.Visual.material.color.setRGB(1,1,1)
             }else if(hp ==2){
                 plr.Visual.material.color.setRGB(1,0.3,0.3)
             }else if(hp==1){
                 plr.Visual.material.color.setRGB(1,0,0)
-            }else{
-                createObject({x: 0, y: 0, z: 0}, {x: plr.Visual.position.x+randInt(-1,1)/10000, y: plr.Visual.position.y+randInt(-1,1)/10000, z: plr.Visual.position.z+randInt(-1,1)/10000}, {x:0.3,y:0.3,z:0.3}, 0xFFFFFF, world, scene, 1, "a", "rb4.png")    
             }
-            const pos2 = ground.Body.translation()
-            const rot2 = ground.Body.rotation()
-            ground.Visual.position.set(pos2.x, pos2.y, pos2.z)
-            ground.Visual.quaternion.set(rot2.x, rot2.y, rot2.z, rot2.w)
             if (hp>0){
                 const dir = new THREE.Vector3();
                 if (keysdown['KeyW']) dir.z -= 1;
                 if (keysdown['KeyS']) dir.z += 1;
                 if (keysdown['KeyA']) dir.x -= 1;
                 if (keysdown['KeyD']) dir.x += 1;
+                if (keysdown['KeyF']) camera.rotation.y += 0.05;
                 const pos = plr.Body.translation()
 
                 const origin = {
@@ -232,8 +221,8 @@
             plr.Visual.quaternion.set(r.x, r.y, r.z, r.w)
             if (hp>0){
             camera.position.x = plr.Visual.position.x
-            camera.position.y = plr.Visual.position.y + 6
-            camera.position.z = plr.Visual.position.z + 6
+            camera.position.y = plr.Visual.position.y + 8
+            camera.position.z = plr.Visual.position.z + 12
             }
             renderer.render(scene, camera)
         }
