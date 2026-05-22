@@ -1,31 +1,30 @@
 <template>
-    <div class = "flex flex-col justify-center items-center w-full h-screen bg-amber-500 p-5">
-        <fieldset class="h-70 fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
-            <h1 class = "justify-self-center text-lg"><b>Create an Account</b></h1>
-            <label class="label">Username</label>
-            <input type="text" class="input" placeholder="Username" v-model="username"/>
+    <fieldset class="h-70 fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+        <h1 class = "justify-self-center text-lg"><b>Create an Account</b></h1>
+        <label class="label">Username</label>
+        <input type="text" class="input" placeholder="Username" v-model="username"/>
 
-            <label class="label">Password</label>
-            <input type="password" class="input" placeholder="Password" v-model="password"/>
+        <label class="label">Password</label>
+        <input type="password" class="input" placeholder="Password" v-model="password"/>
 
-            <button class="btn btn-neutral mt-4" @click = "signUp">Create Account</button>
-        </fieldset>
-        <dialog id="errorModal" class="modal">
-        <div class="modal-box">
-            <h3 class="text-lg text-center font-bold">{{errorMessageTitle}}</h3>
-            <p class="py-4">{{errorMessage}}</p>
-            <div class="modal-action">
-            <form method="dialog">
-                <button class="btn">Exit</button>
-            </form>
-            </div>
+        <button class="btn btn-neutral mt-4" @click = "signUp">Create Account</button>
+        <button class="h-5" v-if="status === `S`" @click = "status = `L`">Click here to log in.</button>
+    </fieldset>
+    <dialog id="errorModal" class="modal">
+    <div class="modal-box">
+        <h3 class="text-lg text-center font-bold">{{errorMessageTitle}}</h3>
+        <p class="py-4">{{errorMessage}}</p>
+        <div class="modal-action">
+        <form method="dialog">
+            <button class="btn">Exit</button>
+        </form>
         </div>
-        </dialog>
     </div>
-
+    </dialog>
 </template>
 
 <script lang = "ts" setup>
+import { status } from '~/global/global'
 //supabase
 const supabase = useSupabaseClient()
 const username = ref('')

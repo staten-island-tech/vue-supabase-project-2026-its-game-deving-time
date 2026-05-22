@@ -1,32 +1,31 @@
 <template>
-    <div class = "flex justify-center items-center w-full h-screen bg-amber-500">
-        <fieldset class="h-70 fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
-            <h1 class = "justify-self-center text-lg"><b>Log In</b></h1>
-            <label class="label">Username</label>
-            <input type="text" class="input" placeholder="Username" v-model="username"/>
+    <fieldset class="h-70 fieldset bg-base-200 border-base-300 rounded-box w-xs border p-4">
+        <h1 class = "justify-self-center text-lg"><b>Log In</b></h1>
+        <label class="label">Username</label>
+        <input type="text" class="input" placeholder="Username" v-model="username"/>
 
-            <label class="label">Password</label>
-            <input type="password" class="input" placeholder="Password" v-model="password"/>
+        <label class="label">Password</label>
+        <input type="password" class="input" placeholder="Password" v-model="password"/>
 
-            <button class="btn btn-neutral mt-4" @click = "login">Login</button>
-
-            <button>Sign up?</button>
-        </fieldset>
-        <dialog id="errorModal" class="modal">
-        <div class="modal-box">
-            <h3 class="text-lg text-center font-bold">Invalid Loggin Credentials</h3>
-            <p class="py-4">Check your password and username. Are you sure you are entering the correct creentials?</p>
-            <div class="modal-action">
-            <form method="dialog">
-                <button class="btn">Exit</button>
-            </form>
-            </div>
+        <button class="btn btn-neutral mt-4" @click = "login">Login</button>
+        <button class="h-5" v-if="status === `L`" @click = "status = `S`">Click here to sign up.</button>
+    </fieldset>
+    <dialog id="errorModal" class="modal">
+    <div class="modal-box">
+        <h3 class="text-lg text-center font-bold">Invalid Loggin Credentials</h3>
+        <p class="py-4">Check your password and username. Are you sure you are entering the correct credentials?</p>
+        <div class="modal-action">
+        <form method="dialog">
+            <button class="btn">Exit</button>
+        </form>
         </div>
-        </dialog>
     </div>
+    </dialog>
+    
 </template>
 
 <script lang = "ts" setup>
+import { status } from '~/global/global'
 const supabase = useSupabaseClient()
 const username = ref('')
 const password = ref('')
