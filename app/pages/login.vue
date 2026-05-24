@@ -39,6 +39,7 @@ async function login(){
     if (error){
         (document.getElementById('errorModal') as HTMLDialogElement).showModal() 
     } else{
+        console.log(data)
         await navigateTo('/test')
     }
 
