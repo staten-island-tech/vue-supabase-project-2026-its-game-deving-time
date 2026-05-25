@@ -3,6 +3,11 @@
 </template>
 
 <script lang="ts" setup>
+definePageMeta({
+  middleware: 'auth' as any
+})
+
+
     import type { World } from '@dimforge/rapier3d-compat';
 import * as THREE from 'three';
     import { onMounted, render } from 'vue';

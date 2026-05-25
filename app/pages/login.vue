@@ -26,9 +26,12 @@
 
 <script lang = "ts" setup>
 import { status } from '~/global/global'
+import { useAuthStore } from '~/store/auth'
+
 const supabase = useSupabaseClient()
 const username = ref('')
 const password = ref('')
+const authStore = useAuthStore()
 
 async function login(){
     const { data, error } = await supabase.auth.signInWithPassword({
@@ -39,11 +42,13 @@ async function login(){
     if (error){
         (document.getElementById('errorModal') as HTMLDialogElement).showModal() 
     } else{
-        console.log(data)
+        authStore.login()
+        await nextTick()
         await navigateTo('/test')
     }
 
 }
+
 
 
 </script>
