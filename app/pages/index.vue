@@ -42,9 +42,9 @@
       <p class="font-bold">
         Game Dev Time Inc.
         <br />
-        Providing 3D games since 2026
+        Providing 3D games since 1752
       </p>
-      <p>No copyright</p>
+      <p>Copyrighted by Michael Whalen</p>
     </aside>
   </footer>
 </template>

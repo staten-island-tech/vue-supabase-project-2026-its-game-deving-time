@@ -25,10 +25,12 @@
 
 <script lang = "ts" setup>
 import { status } from '~/global/global'
+import { useAuthStore } from '~/store/auth'     
 //supabase
 const supabase = useSupabaseClient()
 const username = ref('')
 const password = ref('')
+const authStore = useAuthStore()
 //error
 let errorMessageTitle = ref("")
 let errorMessage = ref("")
@@ -37,7 +39,7 @@ async function signUp() {
     const fakeEmail = username.value + "@gmail.com"
 
     if (!(isUsernameValid(username.value) && isPasswordValid(password.value))){
-        console.log("getTF out")
+        null
     } else{
         const { data: authData, error: authError } = await supabase.auth.signUp({
         email: fakeEmail,
@@ -50,8 +52,11 @@ async function signUp() {
             uuid: authData.user.id,
             Username: username.value
         } as any)
+
         if (playerError) throw playerError
 
+        authStore.login()
+        await nextTick()
         await navigateTo('/test')
     }
 }
