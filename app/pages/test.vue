@@ -3,17 +3,18 @@
 </template>
 
 <script lang="ts" setup>
-definePageMeta({
+/*definePageMeta({
   middleware: 'auth' as any
 })
-
+*/
 
     import type { World } from '@dimforge/rapier3d-compat';
     import * as THREE from 'three';
     import { onMounted } from 'vue';
     import type RAPIERtype from '@dimforge/rapier3d-compat'
     import { OBB } from 'three/examples/jsm/math/OBB.js';
-    import { randInt } from 'three/src/math/MathUtils.js';
+    import { lerp, randInt } from 'three/src/math/MathUtils.js';
+import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
     const RAPIER = await import('@dimforge/rapier3d-compat')
     await RAPIER.init()
     const loader = new THREE.TextureLoader();
@@ -96,6 +97,9 @@ definePageMeta({
             }
             return {Collider: collider, Body: hitboxdesc, Visual: cube, Box: box3, OBBLocal: obbLocal, OBBWorld: obbWorld}
         }
+    function lerpTo(a:number,b:number,t:number){
+        return (b*t)+(1-t)*a
+    }
     onMounted(()=>{
         const brij = new Audio('/bruh.mp3')
         const world = new RAPIER.World({x:0, y:-9.81, z:0})
@@ -196,12 +200,33 @@ definePageMeta({
                 plr.Visual.material.color.setRGB(1,0,0)
             }
             if (hp>0){
-                const dir = new THREE.Vector3();
-                if (keysdown['KeyW']) dir.z -= 1;
-                if (keysdown['KeyS']) dir.z += 1;
-                if (keysdown['KeyA']) dir.x -= 1;
-                if (keysdown['KeyD']) dir.x += 1;
-                if (keysdown['KeyF']) camera.rotation.y += 0.05;
+                const dir = new THREE.Vector3()
+
+                const forward = new THREE.Vector3()
+                camera.getWorldDirection(forward)
+                forward.y = 0
+                forward.normalize()
+
+                const right = new THREE.Vector3()
+                right.crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize()
+
+                if (keysdown['KeyW']) dir.add(forward)
+                if (keysdown['KeyS']) dir.sub(forward)
+
+                if (keysdown['KeyD']) dir.add(right)
+                if (keysdown['KeyA']) dir.sub(right)
+
+                if (dir.lengthSq() > 0) {
+                    dir.normalize().multiplyScalar(0.0025)
+
+                    const force = new RAPIER.Vector3(
+                        dir.x * 50,
+                        0,
+                        dir.z * 50
+                    )
+
+                    plr.Body.applyImpulse(force, true)
+                }
                 const pos = plr.Body.translation()
 
                 const origin = {
@@ -225,9 +250,10 @@ definePageMeta({
             plr.Visual.position.set(p.x, p.y, p.z)
             plr.Visual.quaternion.set(r.x, r.y, r.z, r.w)
             if (hp>0){
-            camera.position.x = plr.Visual.position.x
-            camera.position.y = plr.Visual.position.y + 8
-            camera.position.z = plr.Visual.position.z + 12
+                camera.position.x = lerpTo(camera.position.x,plr.Visual.position.x,0.025)
+                camera.position.y = lerpTo(camera.position.y,plr.Visual.position.y+10,0.025)
+                camera.position.z = lerpTo(camera.position.z,plr.Visual.position.z,0.025)
+                camera.lookAt(plr.Visual.position);
             }
             renderer.render(scene, camera)
         }
