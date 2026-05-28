@@ -33,7 +33,7 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
     }
     const createdObjects: cubeholder[] = []
     const enemies: (enemy & cubeholder)[] = []
-
+    
     function createObject(
         rotation: {x:number,y:number,z:number},
         position: {x:number,y:number,z:number},
@@ -100,6 +100,8 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
     function lerpTo(a:number,b:number,t:number){
         return (b*t)+(1-t)*a
     }
+
+    
     onMounted(()=>{
         const brij = new Audio('/bruh.mp3')
         const world = new RAPIER.World({x:0, y:-9.81, z:0})
@@ -119,14 +121,42 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
         renderer.shadowMap.type = THREE.PCFSoftShadowMap;
         const ambient = new THREE.AmbientLight(0xffffff, 0.3);
         scene.add(ambient);
+        // AI GENERATED
+        function landPiece(
+            prevEnd: THREE.Vector3,
+            rotation: { x: number; y: number; z: number },
+            size: { x: number; y: number; z: number },
+            texture: string
+        ): THREE.Vector3 {
 
+            const quat = new THREE.Quaternion().setFromEuler(
+                new THREE.Euler(rotation.x, rotation.y, rotation.z)
+            );
+
+            const halfOffset = new THREE.Vector3(0, -size.y / 2, -size.z / 2).applyQuaternion(quat);
+            const center = prevEnd.clone().add(halfOffset);
+
+            createObject(
+                rotation,
+                { x: center.x, y: center.y, z: center.z },
+                size,
+                0xFFFFFF,
+                world, scene, 2, "rect", texture
+            );
+
+            // Far edge top face — no Y subtraction needed
+            return prevEnd.clone().add(
+                new THREE.Vector3(0, 0, -size.z).applyQuaternion(quat)
+            );
+        }
+        //---------------------------------
         const sun = new THREE.DirectionalLight(0xfff4e0, 1.2);
         sun.position.set(10, 20, 10);
         sun.castShadow = true;
-        sun.shadow.camera.left = -30;
-        sun.shadow.camera.right = 30;
-        sun.shadow.camera.top = 30;
-        sun.shadow.camera.bottom = -30;
+        sun.shadow.camera.left = -200;
+        sun.shadow.camera.right = 200;
+        sun.shadow.camera.top = 200;
+        sun.shadow.camera.bottom = -200;
         sun.shadow.camera.near = 0.1;
         sun.shadow.camera.far = 100;
         sun.shadow.mapSize.width = 2048;
@@ -137,10 +167,6 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
         document.body.appendChild(renderer.domElement);
         camera.rotation.x = -0.45
         renderer.render(scene, camera)
-        createObject({x: 0, y: 0, z: 0}, {x: 0, y: 0, z: 0}, {x:25,y:1,z:25}, 0xFFFFFF, world, scene, 2, "rect", "grass.png")
-        createObject({x: 0.45, y: 0, z: 0}, {x: 0, y: 5, z: -22}, {x:25,y:1,z:25}, 0xFFFFFF, world, scene, 2, "rect", "grass.png")
-        createObject({x: 0, y: 0, z: 0}, {x: 0, y: 10.35, z: -37.9}, {x:25,y:1,z:10}, 0xFFFFFF, world, scene, 2, "rect", "grass.png")
-        createObject({x: -0.45, y: 0, z: 0}, {x: 0, y: 5, z: -47.9}, {x:25,y:1,z:10}, 0xFFFFFF, world, scene, 2, "rect", "grass.png")
 
         let plr = createObject({x: 0, y: 0, z: 0}, {x: 2, y: 2, z: 2}, {x:1,y:0,z:0}, 0xFFFFFF, world, scene, 1, "a", "rb4.png")
         const keysdown: Record<string,boolean> = {}
@@ -160,6 +186,29 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
         let hp = 3
         let iframes = 0
         let reloading = false
+        function hill(start:THREE.Vector3){
+            const pos1 = landPiece(start,{x:0,y:0,z:0},{x:20,y:1,z:20},"grass.png")
+            const pos2 = landPiece(pos1,{x:0.5,y:0,z:0},{x:20,y:1,z:20},"grass.png")
+            const pos3 = landPiece(pos2,{x:0,y:0,z:0},{x:20,y:1,z:20},"grass.png")
+            const pos4 = landPiece(pos3,{x:-0.5,y:0,z:0},{x:20,y:1,z:20},"grass.png")
+            return pos4
+        }
+        function turn(start:THREE.Vector3){
+            const pos1 = landPiece(start,{x:0,y:0,z:0},{x:20,y:1,z:20},"grass.png")
+            const pos2 = landPiece(pos1,{x:0,y:Math.PI,z:0},{x:20,y:1,z:20},"grass.png")
+            const pos3 = landPiece(pos2,{x:0,y:0,z:0},{x:20,y:1,z:20},"grass.png")
+            return pos3
+        }
+        let prev = new THREE.Vector3(0,0,20)
+        for (let i=1;i<5;i++){
+            let newpos:THREE.Vector3
+            if (randInt(1,2)==1){
+                newpos = hill(prev)
+            }else{
+                newpos = turn(prev)
+            }
+            prev = newpos
+        }
         const animate = (): void => {
             requestAnimationFrame(animate)
             world.step()
@@ -217,7 +266,7 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
                 if (keysdown['KeyA']) dir.sub(right)
 
                 if (dir.lengthSq() > 0) {
-                    dir.normalize().multiplyScalar(0.0025)
+                    dir.normalize().multiplyScalar(0.001)
 
                     const force = new RAPIER.Vector3(
                         dir.x * 50,
@@ -253,7 +302,14 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
                 camera.position.x = lerpTo(camera.position.x,plr.Visual.position.x,0.025)
                 camera.position.y = lerpTo(camera.position.y,plr.Visual.position.y+10,0.025)
                 camera.position.z = lerpTo(camera.position.z,plr.Visual.position.z,0.025)
-                camera.lookAt(plr.Visual.position);
+                
+                const temp = new THREE.PerspectiveCamera();
+
+                temp.position.copy(camera.position);
+                temp.lookAt(plr.Visual.position);
+                
+                const quaternion = temp.quaternion.clone();
+                camera.quaternion.slerp(temp.quaternion, 0.04);
             }
             renderer.render(scene, camera)
         }
