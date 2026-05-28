@@ -12,8 +12,8 @@
     </fieldset>
     <dialog id="errorModal" class="modal">
     <div class="modal-box">
-        <h3 class="text-lg text-center font-bold">Invalid Coding Credentials</h3>
-        <p class="py-4">Check your game. Are you sure you are entering the correct code?</p>
+        <h3 class="text-lg text-center font-bold">Invalid Credentials</h3>
+        <p class="py-4">Check your password and username. Are you sure you are entering the correct credentials?</p>
         <div class="modal-action">
         <form method="dialog">
             <button class="btn">Exit</button>
@@ -44,7 +44,7 @@ async function login(){
     } else{
         authStore.login()
         await nextTick()
-        await navigateTo('/test')
+        await navigateTo('/dashboard')
     }
 
 }

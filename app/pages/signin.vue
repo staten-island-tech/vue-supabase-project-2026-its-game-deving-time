@@ -57,7 +57,7 @@ async function signUp() {
 
         authStore.login()
         await nextTick()
-        await navigateTo('/test')
+        await navigateTo('/dashboard')
     }
 }
 function isUsernameValid(username: String){
@@ -68,7 +68,7 @@ function isUsernameValid(username: String){
         return false
     } else if(!username){
         errorMessageTitle.value = "Invalid Username"
-        errorMessage.value = "You can not have a username with a name...";
+        errorMessage.value = "You can not have a blank username...";
         (document.getElementById('errorModal') as HTMLDialogElement).showModal()  
         return false
     }
@@ -78,12 +78,12 @@ function isUsernameValid(username: String){
 function isPasswordValid(password: String){
     if (password.length < 8){
         errorMessageTitle.value = "Invalid Password"
-        errorMessage.value = "Passwords should be more than 5 characters long.";
+        errorMessage.value = "Passwords should be at least 8 characters long.";
         (document.getElementById('errorModal') as HTMLDialogElement).showModal()
         return false
     } else if (password.includes(" ")){
         errorMessageTitle.value = "Invalid Password"
-        errorMessage.value = "Passwords should not contain symbols.";
+        errorMessage.value = "Passwords should not contain spaces.";
         (document.getElementById('errorModal') as HTMLDialogElement).showModal()
         return false
     }
