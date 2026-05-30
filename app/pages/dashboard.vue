@@ -30,11 +30,13 @@
 </template>
 <script lang = "ts" setup>
 const supabase = useSupabaseClient()
+const user = useSupabaseUser()
 
 async function Logout(){
     await supabase.auth.signOut()
     await navigateTo('/')
 }
 
+console.log(user.value)
 
 </script>
