@@ -1,42 +1,51 @@
 <template>
     <div class="navbar bg-base-100 shadow-sm">
         <div class="flex-1">
-            <a class="btn btn-ghost text-xl">daisyUI</a>
+            <button class="btn btn-ghost text-xl" @click = "display = 'Dashboard'">Dashboard</button>
         </div>
         <div class="flex gap-2">
-            <input type="text" placeholder="Search" class="input input-bordered w-24 md:w-auto" />
+            <div class =  "flex items-center">
+                <p>{{ username }}</p>
+            </div>
             <div class="dropdown dropdown-end">
             <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
                 <div class="w-10 rounded-full">
                 <img
                     alt="Tailwind CSS Navbar component"
-                    src="https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp" />
+                    src="/placeholder.jpg" />
                 </div>
             </div>
             <ul
                 tabindex="-1"
                 class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
                 <li>
-                <a class="justify-between">
+                <a class="justify-between" @click = "display = 'Profile'">
                     Profile
                 </a>
                 </li>
-                <li><a>Settings</a></li>
+                <li><a @click = "display = 'Settings'">Settings</a></li>
                 <li><button @click = "Logout">Logout</button></li>
             </ul>
             </div>
         </div>
     </div>
+    <Profile :username = "username" v-if ='display === "Profile"'></Profile>
 </template>
 <script lang = "ts" setup>
+definePageMeta({
+  middleware: 'auth' as any
+})
+
+import Profile from './Profile.vue'
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
+const username = user.value!.email!.split("@gmail.com")[0]
+const display = ref('Dashboard')
 
 async function Logout(){
     await supabase.auth.signOut()
     await navigateTo('/')
 }
 
-console.log(user.value)
 
 </script>

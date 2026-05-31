@@ -1,4 +1,5 @@
 <template>
+<div>
     <div class = "flex fixed bg-blue-500 w-full justify-center">
       <!-- Navagation -->
     <div class="navbar bg-base-100 shadow-sm">
@@ -24,6 +25,7 @@
       <signin v-if="status === `S`"></signin>
       <login v-if="status === `L`"></login>
     </div>
+</div>
 </template>
 
 <script setup>
