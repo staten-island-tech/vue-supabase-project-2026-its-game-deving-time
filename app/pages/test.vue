@@ -124,30 +124,31 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
         // AI GENERATED
         function landPiece(
             prevEnd: THREE.Vector3,
-            rotation: { x: number; y: number; z: number },
+            prevQuat: THREE.Quaternion,
+            localRotation: { x: number; y: number; z: number },
             size: { x: number; y: number; z: number },
             texture: string
-        ): THREE.Vector3 {
+        ): { pos: THREE.Vector3, quat: THREE.Quaternion } {
 
-            const quat = new THREE.Quaternion().setFromEuler(
-                new THREE.Euler(rotation.x, rotation.y, rotation.z)
+            const localQuat = new THREE.Quaternion().setFromEuler(
+                new THREE.Euler(localRotation.x, localRotation.y, localRotation.z)
             );
+            const quat = prevQuat.clone().multiply(localQuat);
 
             const halfOffset = new THREE.Vector3(0, -size.y / 2, -size.z / 2).applyQuaternion(quat);
             const center = prevEnd.clone().add(halfOffset);
 
+            const euler = new THREE.Euler().setFromQuaternion(quat);
             createObject(
-                rotation,
+                { x: euler.x, y: euler.y, z: euler.z },
                 { x: center.x, y: center.y, z: center.z },
-                size,
-                0xFFFFFF,
-                world, scene, 2, "rect", texture
+                size, 0xFFFFFF, world, scene, 2, "rect", texture
             );
 
-            // Far edge top face — no Y subtraction needed
-            return prevEnd.clone().add(
-                new THREE.Vector3(0, 0, -size.z).applyQuaternion(quat)
-            );
+            return {
+                pos: prevEnd.clone().add(new THREE.Vector3(0, 0, -size.z).applyQuaternion(quat)),
+                quat
+            };
         }
         //---------------------------------
         const sun = new THREE.DirectionalLight(0xfff4e0, 1.2);
@@ -182,36 +183,296 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
             plr.OBBWorld.copy(plr.OBBLocal).applyMatrix4(plr.Visual.matrixWorld);
             return object.OBBWorld.intersectsOBB(plr.OBBWorld);
         }
-        //createObject({x: 0, y: 0, z: 0}, {x: randInt(-25,25), y: randInt(30,60), z: randInt(-25,25)}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene, 1, "rect", "evil.png", {Speed:1, Health:1, MaxHP:1})  
+
         let hp = 3
         let iframes = 0
         let reloading = false
-        function hill(start:THREE.Vector3){
-            const pos1 = landPiece(start,{x:0,y:0,z:0},{x:20,y:1,z:20},"grass.png")
-            const pos2 = landPiece(pos1,{x:0.5,y:0,z:0},{x:20,y:1,z:20},"grass.png")
-            const pos3 = landPiece(pos2,{x:0,y:0,z:0},{x:20,y:1,z:20},"grass.png")
-            const pos4 = landPiece(pos3,{x:-0.5,y:0,z:0},{x:20,y:1,z:20},"grass.png")
-            return pos4
+        //AI GENERATED
+        function clampedPitch(prevQuat: THREE.Quaternion, localRotation: {x:number, y:number, z:number}) {
+            // Extract current pitch from accumulated quaternion
+            const currentEuler = new THREE.Euler().setFromQuaternion(prevQuat, 'YXZ');
+            const currentPitch = currentEuler.x;
+
+            // Clamp so total pitch stays within ~±0.6 radians (~35 degrees)
+            const maxPitch = 0.6;
+            const minPitch = -0.6;
+            const desiredPitch = currentPitch + localRotation.x;
+            const clampedX = Math.max(minPitch, Math.min(maxPitch, desiredPitch)) - currentPitch;
+
+            return { ...localRotation, x: clampedX };
         }
-        function turn(start:THREE.Vector3){
-            const pos1 = landPiece(start,{x:0,y:0,z:0},{x:20,y:1,z:20},"grass.png")
-            const pos2 = landPiece(pos1,{x:0,y:Math.PI,z:0},{x:20,y:1,z:20},"grass.png")
-            const pos3 = landPiece(pos2,{x:0,y:0,z:0},{x:20,y:1,z:20},"grass.png")
-            return pos3
+        function safeLandPiece(
+            pos: THREE.Vector3,
+            quat: THREE.Quaternion,
+            rotation: {x:number, y:number, z:number},
+            size: {x:number, y:number, z:number},
+            texture: string
+        ) {
+            return landPiece(pos, quat, clampedPitch(quat, rotation), size, texture);
         }
-        let prev = new THREE.Vector3(0,0,20)
-        for (let i=1;i<5;i++){
-            let newpos:THREE.Vector3
-            if (randInt(1,2)==1){
-                newpos = hill(prev)
-            }else{
-                newpos = turn(prev)
+        // Flat straight section
+        function flat(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            let pos = start, quat = startQuat;
+            const count = randInt(2, 5);
+            for (let i = 0; i < count; i++) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: 0, y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png"));
             }
-            prev = newpos
+            return { pos, quat };
         }
+
+        // Gentle hill up and back down
+        function hill(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const { pos: p1, quat: q1 } = safeLandPiece(start, startQuat, { x: 0,    y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p2, quat: q2 } = safeLandPiece(p1,    q1,        { x: 0.5,  y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p3, quat: q3 } = safeLandPiece(p2,    q2,        { x: 0,    y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p4, quat: q4 } = safeLandPiece(p3,    q3,        { x: -0.5, y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            return { pos: p4, quat: q4 }
+        }
+
+        // Steep sharp hill
+        function steepHill(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const { pos: p1, quat: q1 } = safeLandPiece(start, startQuat, { x: 0,   y: 0, z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png")
+            const { pos: p2, quat: q2 } = safeLandPiece(p1,    q1,        { x: 0.9, y: 0, z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png")
+            const { pos: p3, quat: q3 } = safeLandPiece(p2,    q2,        { x: 0,   y: 0, z: 0 }, { x: 20, y: 1, z: 10 }, "grass.png")
+            const { pos: p4, quat: q4 } = safeLandPiece(p3,    q3,        { x:-0.9, y: 0, z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png")
+            return { pos: p4, quat: q4 }
+        }
+
+        // Long downward slope
+        function slope(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const { pos: p1, quat: q1 } = safeLandPiece(start, startQuat, { x: 0,    y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p2, quat: q2 } = safeLandPiece(p1,    q1,        { x: 0.35, y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p3, quat: q3 } = safeLandPiece(p2,    q2,        { x: 0.35, y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p4, quat: q4 } = safeLandPiece(p3,    q3,        { x: 0.35, y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p5, quat: q5 } = safeLandPiece(p4,    q4,        { x: 0,    y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            return { pos: p5, quat: q5 }
+        }
+
+        // 90 degree turn left or right
+        function turn(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const options = [Math.PI / 2, -Math.PI / 2].filter(a => !wouldBacktrack(startQuat, a));
+            const angle = options[randInt(0, options.length - 1)];
+            const { pos: p1, quat: q1 } = safeLandPiece(start, startQuat, { x: 0, y: 0,     z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p2, quat: q2 } = safeLandPiece(p1,    q1,        { x: 0, y: angle,  z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p3, quat: q3 } = safeLandPiece(p2,    q2,        { x: 0, y: 0,      z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            return { pos: p3, quat: q3 }
+        }
+
+        // Gradual curve (multiple small turns)
+        function curve(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const options = [Math.PI / 8, -Math.PI / 8].filter(a => !wouldBacktrack(startQuat, a));
+            const angle = options[randInt(0, options.length - 1)];
+            let pos = start, quat = startQuat;
+            for (let i = 0; i < 4; i++) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: 0, y: angle, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png"));
+            }
+            return { pos, quat };
+        }
+
+        // Narrow bridge
+        function bridge(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            let pos = start, quat = startQuat;
+            const { pos: entry, quat: eq } = safeLandPiece(pos, quat, { x: 0, y: 0, z: 0 }, { x: 20, y: 1, z: 10 }, "grass.png");
+            pos = entry; quat = eq;
+            for (let i = 0; i < 4; i++) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: 0, y: 0, z: 0 }, { x: 6, y: 1, z: 10 }, "grass.png"));
+            }
+            return safeLandPiece(pos, quat, { x: 0, y: 0, z: 0 }, { x: 20, y: 1, z: 10 }, "grass.png");
+        }
+
+        // Zigzag (alternating left-right turns)
+        function zigzag(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const firstAngle = wouldBacktrack(startQuat, Math.PI / 2) ? -Math.PI / 2 : Math.PI / 2;
+            let pos = start, quat = startQuat;
+            for (let i = 0; i < 4; i++) {
+                const angle = i % 2 === 0 ? firstAngle : -firstAngle;
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: 0, y: angle, z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png"));
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: 0, y: 0,     z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png"));
+            }
+            return { pos, quat };
+        }
+
+        // Bumpy road (small rapid undulations)
+        function bumpy(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const tilts = [0.3, -0.3, 0.25, -0.25, 0.2, -0.2];
+            let pos = start, quat = startQuat;
+            for (const tilt of tilts) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: tilt, y: 0, z: 0 }, { x: 20, y: 1, z: 10 }, "grass.png"));
+            }
+            return { pos, quat };
+        }
+        // Stairs going up
+        function stairsUp(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            let pos = start, quat = startQuat;
+            for (let i = 0; i < 6; i++) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: 0, y: 0, z: 0 }, { x: 20, y: 2, z: 8 }, "grass.png"));
+            }
+            return { pos, quat };
+        }
+
+        // Stairs going down
+        function stairsDown(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            let pos = start, quat = startQuat;
+            // drop the start point down first
+            pos = new THREE.Vector3(pos.x, pos.y - 12, pos.z).add(
+                new THREE.Vector3(0, 0, -8).applyQuaternion(quat)
+            );
+            for (let i = 0; i < 6; i++) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: 0, y: 0, z: 0 }, { x: 20, y: 2, z: 8 }, "grass.png"));
+            }
+            return { pos, quat };
+        }
+
+        // Wide open plateau — flat and wide
+        function plateau(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const { pos: p1, quat: q1 } = safeLandPiece(start, startQuat, { x: 0.4, y: 0, z: 0 }, { x: 40, y: 1, z: 15 }, "grass.png")
+            const { pos: p2, quat: q2 } = safeLandPiece(p1,    q1,        { x: 0,   y: 0, z: 0 }, { x: 40, y: 1, z: 30 }, "grass.png")
+            const { pos: p3, quat: q3 } = safeLandPiece(p2,    q2,        { x: 0,   y: 0, z: 0 }, { x: 40, y: 1, z: 30 }, "grass.png")
+            const { pos: p4, quat: q4 } = safeLandPiece(p3,    q3,        { x:-0.4, y: 0, z: 0 }, { x: 40, y: 1, z: 15 }, "grass.png")
+            return { pos: p4, quat: q4 }
+        }
+
+        // Narrow ridge — thin and scary
+        function ridge(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const { pos: p1, quat: q1 } = safeLandPiece(start, startQuat, { x: 0.5, y: 0, z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png")
+            let pos = p1, quat = q1;
+            for (let i = 0; i < 4; i++) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: 0, y: 0, z: 0 }, { x: 4, y: 1, z: 12 }, "grass.png"));
+            }
+            const { pos: pL, quat: qL } = safeLandPiece(pos, quat, { x: -0.5, y: 0, z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png")
+            return { pos: pL, quat: qL }
+        }
+
+        // S-curve
+        function sCurve(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const firstAngle = wouldBacktrack(startQuat, Math.PI / 6) ? -Math.PI / 6 : Math.PI / 6;
+            let pos = start, quat = startQuat;
+            for (let i = 0; i < 3; i++) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: 0, y: firstAngle,  z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png"));
+            }
+            for (let i = 0; i < 3; i++) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: 0, y: -firstAngle, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png"));
+            }
+            return { pos, quat };
+        }
+
+        // Valley — dips down then comes back up
+        function valley(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const { pos: p1, quat: q1 } = safeLandPiece(start, startQuat, { x:-0.5, y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p2, quat: q2 } = safeLandPiece(p1,    q1,        { x:-0.3, y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p3, quat: q3 } = safeLandPiece(p2,    q2,        { x: 0,   y: 0, z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png")
+            const { pos: p4, quat: q4 } = safeLandPiece(p3,    q3,        { x: 0.3, y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p5, quat: q5 } = safeLandPiece(p4,    q4,        { x: 0.5, y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            return { pos: p5, quat: q5 }
+        }
+
+        // Spiral descent — curves and drops at the same time
+        function spiralDown(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const options = [Math.PI / 5, -Math.PI / 5].filter(a => !wouldBacktrack(startQuat, a));
+            const angle = options[randInt(0, options.length - 1)];
+            let pos = start, quat = startQuat;
+            for (let i = 0; i < 6; i++) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: -0.2, y: angle, z: 0 }, { x: 20, y: 1, z: 18 }, "grass.png"));
+            }
+            return { pos, quat };
+        }
+
+        // Chicane — tight left then right (or reverse)
+        function chicane(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const firstAngle = wouldBacktrack(startQuat, Math.PI / 3) ? -Math.PI / 3 : Math.PI / 3;
+            const { pos: p1, quat: q1 } = safeLandPiece(start, startQuat, { x: 0, y: 0,           z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png")
+            const { pos: p2, quat: q2 } = safeLandPiece(p1,    q1,        { x: 0, y: firstAngle,  z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png")
+            const { pos: p3, quat: q3 } = safeLandPiece(p2,    q2,        { x: 0, y: -firstAngle, z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png")
+            const { pos: p4, quat: q4 } = safeLandPiece(p3,    q3,        { x: 0, y: 0,           z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png")
+            return { pos: p4, quat: q4 }
+        }
+
+        // Rolling hills — several gentle ups and downs
+        function rollingHills(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const waves = [0.3, -0.3, 0.3, -0.3, 0.3, -0.3];
+            let pos = start, quat = startQuat;
+            for (const tilt of waves) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: tilt, y: 0, z: 0 }, { x: 20, y: 1, z: 18 }, "grass.png"));
+            }
+            return { pos, quat };
+        }
+
+        // Ramp up to a flat roof then off the edge
+        function rooftop(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const { pos: p1, quat: q1 } = safeLandPiece(start, startQuat, { x: 0.6,  y: 0, z: 0 }, { x: 20, y: 1, z: 12 }, "grass.png")
+            const { pos: p2, quat: q2 } = safeLandPiece(p1,    q1,        { x: 0,    y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p3, quat: q3 } = safeLandPiece(p2,    q2,        { x: 0,    y: 0, z: 0 }, { x: 20, y: 1, z: 20 }, "grass.png")
+            const { pos: p4, quat: q4 } = safeLandPiece(p3,    q3,        { x:-0.6,  y: 0, z: 0 }, { x: 20, y: 1, z: 12 }, "grass.png")
+            return { pos: p4, quat: q4 }
+        }
+
+        // Corkscrew — bank left while going up, then unwind
+        function corkscrew(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const options = [Math.PI / 7, -Math.PI / 7].filter(a => !wouldBacktrack(startQuat, a));
+            const yaw = options[randInt(0, options.length - 1)];
+            let pos = start, quat = startQuat;
+            for (let i = 0; i < 4; i++) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: 0.25, y: yaw,  z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png"));
+            }
+            for (let i = 0; i < 4; i++) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x:-0.25, y: -yaw, z: 0 }, { x: 20, y: 1, z: 15 }, "grass.png"));
+            }
+            return { pos, quat };
+        }
+
+        // Narrow path that widens back out
+        function funnel(start: THREE.Vector3, startQuat: THREE.Quaternion) {
+            const widths = [20, 14, 8, 5, 5, 8, 14, 20];
+            let pos = start, quat = startQuat;
+            for (const w of widths) {
+                ({ pos, quat } = safeLandPiece(pos, quat, { x: 0, y: 0, z: 0 }, { x: w, y: 1, z: 10 }, "grass.png"));
+            }
+            return { pos, quat };
+        }
+        function wouldBacktrack(currentQuat: THREE.Quaternion, turnY: number): boolean {
+            const testQuat = currentQuat.clone().multiply(
+                new THREE.Quaternion().setFromEuler(new THREE.Euler(0, turnY, 0))
+            );
+            const currentForward = new THREE.Vector3(0, 0, -1).applyQuaternion(currentQuat);
+            const newForward = new THREE.Vector3(0, 0, -1).applyQuaternion(testQuat);
+            return currentForward.dot(newForward) < 0;
+        }
+        const terrainTypes = [
+            flat, hill, steepHill, slope, turn, curve, bridge, zigzag, bumpy,
+            stairsUp, plateau, ridge, sCurve, valley, spiralDown, chicane,
+            rollingHills, rooftop, corkscrew, funnel
+        ];
+
+        let prev = new THREE.Vector3(0, 0, 20);
+        let prevQuat = new THREE.Quaternion();
+        let prevnum = -1
+        flat(prev,prevQuat)
+        for (let i = 0; i < 15; i++) {
+            let rand = randInt(0, terrainTypes.length - 1)
+            while (rand==prevnum){
+                rand = randInt(0, terrainTypes.length - 1)
+            }
+            prevnum = rand
+            const pick = terrainTypes[rand]?? flat;
+            
+            const result = pick(prev, prevQuat);
+            prev = result.pos;
+            prevQuat = result.quat;
+        }
+        //------------------
+        let delay = 0
+        let spawned = false
         const animate = (): void => {
             requestAnimationFrame(animate)
             world.step()
+            if (delay < 250){
+                delay +=1
+            }else if (!spawned){
+                spawned = true
+                for (let i = 1; i < 40; i++) {
+                    createObject({x: 0, y: 0, z: 0}, {x: randInt(-25,25), y: randInt(30,60), z: randInt(-25,25)}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene, 1, "rect", "evil.png", {Speed:randInt(60,110)/10, Health:1, MaxHP:1})  
+                }
+            }
             iframes = Math.max(0,iframes-1)
             createdObjects.forEach((x)=>{
                 const pos = x.Hitbox.translation()
@@ -222,13 +483,11 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
                 x.OBBWorld.copy(x.OBBLocal).applyMatrix4(x.Visual.matrixWorld);
             })
             enemies.forEach((x)=>{
-                if (x.Visual.position.distanceTo(plr.Visual.position)<=30){
-                    const lookVector = new THREE.Vector3()
-                    .subVectors(plr.Visual.position, x.Visual.position)
-                    .normalize()
-                    .multiplyScalar(x.Speed/10);
-                    x.Hitbox.applyImpulse(lookVector, true)
-                }
+                const lookVector = new THREE.Vector3()
+                .subVectors(plr.Visual.position, x.Visual.position)
+                .normalize()
+                .multiplyScalar(x.Speed/10);
+                x.Hitbox.applyImpulse(lookVector, true)
                 if (checkCollision({OBBLocal:x.OBBLocal, OBBWorld:x.OBBWorld, Visual:x.Visual}, {OBBLocal:plr.OBBLocal, OBBWorld:plr.OBBWorld, Visual:plr.Visual}) && !reloading && iframes==0){
                     iframes=120
                     hp--
