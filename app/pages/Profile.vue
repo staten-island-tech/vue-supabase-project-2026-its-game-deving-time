@@ -7,11 +7,11 @@
             src="/placeholder.jpg"
             alt="pfp" />
         </figure>
-        <div class="card-body">
-            <h2 class="card-title text-center">Profile Picture</h2>
+        <div class="items-center card-body">
+            <h2 class="card-title">Profile Picture</h2>
             <p>Upload a profile picture here below.</p>
             <div class="card-actions justify-end">
-                <input type="file" class="file-input" />
+               <input type="file" class="file-input"/>
             </div>
         </div>
         </div>
@@ -22,8 +22,6 @@
 const props = defineProps({
     username: String
 })
-
-
 </script>
 
 <style scoped>
