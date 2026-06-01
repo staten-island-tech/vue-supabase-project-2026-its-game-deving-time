@@ -1,7 +1,7 @@
 <template>
     <div class="navbar bg-base-100 shadow-sm">
         <div class="flex-1">
-            <button class="btn btn-ghost text-xl" @click = "display = 'Dashboard'">Dashboard</button>
+            <button class="btn btn-ghost text-xl hover:text-blue-600" @click = "display = 'Dashboard'">Dashboard</button>
         </div>
         <div class="flex gap-2">
             <div class =  "flex items-center">
@@ -19,12 +19,12 @@
                 tabindex="-1"
                 class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
                 <li>
-                <a class="justify-between" @click = "display = 'Profile'">
+                <a class="justify-between hover:underline" @click = "display = 'Profile'">
                     Profile
                 </a>
                 </li>
-                <li><a @click = "display = 'Settings'">Settings</a></li>
-                <li><button @click = "Logout">Logout</button></li>
+                <li><a class = "hover:underline" @click = "display = 'Settings'">Settings</a></li>
+                <li><button class = "hover:underline" @click = "Logout">Logout</button></li>
             </ul>
             </div>
         </div>
@@ -39,7 +39,10 @@ definePageMeta({
 import Profile from './Profile.vue'
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
-const username = user.value!.email!.split("@gmail.com")[0]
+const username = computed(() => {
+  return user.value?.email?.split("@gmail.com")[0] ?? ''
+})
+
 const display = ref('Dashboard')
 
 async function Logout(){

@@ -8,7 +8,7 @@
         <input type="password" class="input" placeholder="Password" v-model="password"/>
 
         <button class="btn btn-neutral mt-4" @click = "login">Login</button>
-        <button class="h-5" v-if="status === `L`" @click = "status = `S`">Click here to sign up.</button>
+        <button class="h-5 cursor-pointer hover:underline" v-if="status === `L`" @click = "status = `S`">Need an account? Sign up here.</button>
     </fieldset>
     <dialog id="errorModal" class="modal">
     <div class="modal-box">
