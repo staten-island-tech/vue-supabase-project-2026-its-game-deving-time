@@ -12,7 +12,7 @@
                 <div class="w-10 rounded-full">
                 <img
                     alt="Tailwind CSS Navbar component"
-                    src="/placeholder.jpg" />
+                    :src="image" />
                 </div>
             </div>
             <ul
@@ -42,6 +42,7 @@ const user = useSupabaseUser()
 const username = computed(() => {
   return user.value?.email?.split("@gmail.com")[0] ?? ''
 })
+const image = ref("/placeholder.jpg")
 
 const display = ref('Dashboard')
 
@@ -50,5 +51,13 @@ async function Logout(){
     await navigateTo('/')
 }
 
+const { data: player} = await supabase.from('Players')
+    .select('avatar')
+    .eq('uuid', user.value!.sub)
+    .single() as any
+
+    if ((player as any)?.avatar){
+        image.value = (player as any).avatar
+    }
 
 </script>
