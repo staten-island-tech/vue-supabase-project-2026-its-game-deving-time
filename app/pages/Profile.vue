@@ -2,14 +2,15 @@
     <div class="flex justify-center align-middle p-10">
         <div class="card bg-base-100 w-96 shadow-sm">
         <figure>
-            <img class="w-50" :src="image" alt="pfp" />
+            <img class="w-50" :src="preview ?? image" alt="pfp" />
         </figure>
         <div class="items-center card-body">
             <h2 class="card-title">Profile Picture</h2>
             <p>Upload a profile picture here below.</p>
             <div class="card-actions justify-end">
-                <input type="file" id="fileInput" class="hidden" @change="handleFile"/>
-                <button class="btn btn-neutral" @click="document.getElementById('fileInput').click()">Change Avatar</button>
+               <input type="file" ref="fileInput" class="hidden" @change="handleFile"/>
+               <button class="btn btn-neutral" @click="(fileInput as any).click()">Choose Image</button>
+               <button class="btn btn-primary" @click="uploadAvatar" :disabled="!selectedFile">Save</button>
             </div>
         </div>
         </div>
@@ -17,47 +18,52 @@
 </template>
 
 <script lang="ts" setup>
-const props = defineProps({
-    username: String
-})
+const props = defineProps({ username: String })
+
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 const image = ref('/placeholder.jpg')
-console.log(user.value!)
+const preview = ref<string | null>(null)
+const selectedFile = ref<File | null>(null)
+const fileInput = ref(null)
 
-// Load existing avatar on mount
-const { data: player} = await supabase.from('Players')
-    .select('avatar')
-    .eq('uuid', user.value!.sub)
-    .single() as any
+watch(user, async (newUser) => {
+    if (!newUser) return
+    const { data: player, error } = await supabase.from('Players')
+        .select('avatar')
+        .eq('uuid', newUser.sub)
+        .single() as any
 
-    if ((player as any)?.avatar){
-        image.value = (player as any).avatar
-    }
+    if ((player as any)?.avatar) image.value = (player as any).avatar
+}, { immediate: true })
 
-async function handleFile(event: Event) {
-    console.log("triggered")
+function handleFile(event: Event) {
     const file = (event.target as HTMLInputElement).files?.[0]
     if (!file) return
+    selectedFile.value = file
+    preview.value = URL.createObjectURL(file)
+}
 
-    console.log("trigger2.0")
-    // Show preview
-    image.value = URL.createObjectURL(file)
+async function uploadAvatar() {
+    if (!selectedFile.value || !user.value) return
 
-    // Upload to storage
     const { error: uploadError } = await supabase.storage
         .from('avatars')
-        .upload(`${user.value!.sub}/avatar`, file, { upsert: true })
+        .upload(`${(user.value as any).sub}/avatar`, selectedFile.value, { upsert: true })
 
     if (uploadError) return console.error(uploadError)
 
     const { data } = supabase.storage
         .from('avatars')
-        .getPublicUrl(`${user.value!.sub}/avatar`)
+        .getPublicUrl(`${(user.value as any).sub}/avatar`)
 
     await (supabase.from('Players') as any)
-        .update({ avatar: data.publicUrl } as any)
-        .eq('uuid', user.value!.sub)
-    null
+        .update({ avatar: data.publicUrl })
+        .eq('uuid', (user.value as any).sub)
+
+    // Update image instantly
+    image.value = data.publicUrl
+    preview.value = null
+    selectedFile.value = null
 }
 </script>
