@@ -37,12 +37,20 @@ definePageMeta({
 })
 
 import Profile from './Profile.vue'
+import { useAuthStore } from '~/store/auth'
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
+const authStore = useAuthStore()
+const image = ref(authStore.avatar)
 const username = computed(() => {
   return user.value?.email?.split("@gmail.com")[0] ?? ''
 })
-const image = ref("/placeholder.jpg")
+
+image.value = "/placeholder.jpg"
+
+watch(() => authStore.avatar, (newAvatar) => {
+    image.value = newAvatar
+})
 
 const display = ref('Dashboard')
 
@@ -51,13 +59,17 @@ async function Logout(){
     await navigateTo('/')
 }
 
-const { data: player} = await supabase.from('Players')
-    .select('avatar')
-    .eq('uuid', user.value!.sub)
-    .single() as any
+watch(user, async (newUser) => {
+    if (!newUser) return
+    
+    const { data: player } = await supabase.from('Players')
+        .select('avatar')
+        .eq('uuid', (newUser as any).sub)
+        .single() as any
 
-    if ((player as any)?.avatar){
+    if ((player as any)?.avatar) {
         image.value = (player as any).avatar
     }
+}, { immediate: true })
 
 </script>

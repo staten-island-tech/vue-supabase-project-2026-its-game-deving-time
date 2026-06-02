@@ -1,5 +1,5 @@
 <template>
-    <div class="flex justify-center align-middle p-10">
+    <div class="flex justify-center align-middle pt-10 p-2">
         <div class="card bg-base-100 w-96 shadow-sm">
         <figure>
             <img class="w-50" :src="preview ?? image" alt="pfp" />
@@ -14,18 +14,30 @@
             </div>
         </div>
         </div>
+        <div class="items-center card-body">
+            <h2 class="card-title">Username</h2>
+            <p>Change your username below.</p>
+            <div class="card-actions justify-end">
+            <input type="text" class="input" placeholder="Username" v-model="newName"/>
+            <button class="btn btn-primary" @click="newUsername">Save</button>
+            </div>
+        </div>
     </div>
 </template>
 
 <script lang="ts" setup>
+import { useAuthStore } from '~/store/auth'
+
 const props = defineProps({ username: String })
 
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
+const newName = ref("")
 const image = ref('/placeholder.jpg')
 const preview = ref<string | null>(null)
 const selectedFile = ref<File | null>(null)
 const fileInput = ref(null)
+const authStore = useAuthStore()
 
 watch(user, async (newUser) => {
     if (!newUser) return
@@ -57,13 +69,20 @@ async function uploadAvatar() {
         .from('avatars')
         .getPublicUrl(`${(user.value as any).sub}/avatar`)
 
+    const bustCache = `${data.publicUrl}?t=${Date.now()}`
+
     await (supabase.from('Players') as any)
-        .update({ avatar: data.publicUrl })
+        .update({ avatar: bustCache })
         .eq('uuid', (user.value as any).sub)
 
-    // Update image instantly
-    image.value = data.publicUrl
+    authStore.setAvatar(bustCache)
+    image.value = bustCache
     preview.value = null
     selectedFile.value = null
 }
+
+function newUsername(){
+    null
+}
+
 </script>
