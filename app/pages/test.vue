@@ -33,7 +33,7 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
     }
     const createdObjects: cubeholder[] = []
     const enemies: (enemy & cubeholder)[] = []
-    
+    const terrainPieces: cubeholder[] = [];
     function createObject(
         rotation: {x:number,y:number,z:number},
         position: {x:number,y:number,z:number},
@@ -81,7 +81,20 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
             cube.updateMatrixWorld();
             obbWorld.copy(obbLocal).applyMatrix4(cube.matrixWorld);
 
-            createdObjects.push({Visual: cube, Hitbox: hitboxdesc, Box: box3, OBBLocal: obbLocal, OBBWorld: obbWorld,Collider:collider})
+            const obj = {
+                Visual: cube,
+                Hitbox: hitboxdesc,
+                Box: box3,
+                OBBLocal: obbLocal,
+                OBBWorld: obbWorld,
+                Collider: collider
+            };
+
+            createdObjects.push(obj);
+
+            if (type === 2) {
+                terrainPieces.push(obj);
+            }
             if (enemydata !== undefined){
                 enemies.push({
                     Visual: cube, 
@@ -440,37 +453,58 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
         const terrainTypes = [
             flat, hill, steepHill, slope, turn, curve, bridge, zigzag, bumpy,
             stairsUp, plateau, ridge, sCurve, valley, spiralDown, chicane,
-            rollingHills, rooftop, corkscrew, funnel
+            rollingHills, rooftop, corkscrew, funnel, stairsDown
         ];
 
         let prev = new THREE.Vector3(0, 0, 20);
         let prevQuat = new THREE.Quaternion();
-        let prevnum = -1
-        flat(prev,prevQuat)
-        for (let i = 0; i < 15; i++) {
-            let rand = randInt(0, terrainTypes.length - 1)
-            while (rand==prevnum){
-                rand = randInt(0, terrainTypes.length - 1)
+        let prevnum = -1;
+
+        const terrainPieces: cubeholder[] = [];
+
+        function generateChunk(count = 10) {
+            for (let i = 0; i < count; i++) {
+
+                let rand = randInt(0, terrainTypes.length - 1);
+
+                while (rand === prevnum) {
+                    rand = randInt(0, terrainTypes.length - 1);
+                }
+
+                prevnum = rand;
+
+                const pick = terrainTypes[rand] ?? flat;
+
+                const result = pick(prev, prevQuat);
+
+                prev = result.pos;
+                prevQuat = result.quat;
             }
-            prevnum = rand
-            const pick = terrainTypes[rand]?? flat;
-            
-            const result = pick(prev, prevQuat);
-            prev = result.pos;
-            prevQuat = result.quat;
         }
+        for (let i = 0; i < 2; i++) {
+            const res = flat(prev, prevQuat);
+            prev = res.pos;
+            prevQuat = res.quat;
+        }
+
+        generateChunk(20);
         //------------------
         let delay = 0
         let spawned = false
         const animate = (): void => {
             requestAnimationFrame(animate)
             world.step()
-            if (delay < 250){
+            const playerPos = plr.Visual.position;
+
+            if (playerPos.distanceTo(prev) < 100) {
+                generateChunk(3);
+            }
+            if (delay < 500){
                 delay +=1
             }else if (!spawned){
                 spawned = true
                 for (let i = 1; i < 40; i++) {
-                    createObject({x: 0, y: 0, z: 0}, {x: randInt(-25,25), y: randInt(30,60), z: randInt(-25,25)}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene, 1, "rect", "evil.png", {Speed:randInt(60,110)/10, Health:1, MaxHP:1})  
+                    createObject({x: 0, y: 0, z: 0}, {x: randInt(-25,25), y: randInt(30,60), z: randInt(-25,25)}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene, 1, "rect", "evil.png", {Speed:randInt(60,105)/10, Health:1, MaxHP:1})  
                 }
             }
             iframes = Math.max(0,iframes-1)
@@ -570,7 +604,25 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
                 const quaternion = temp.quaternion.clone();
                 camera.quaternion.slerp(temp.quaternion, 0.04);
             }
+            while (terrainPieces.length > 300) {
+
+                const old = terrainPieces.shift();
+
+                if (!old) break;
+
+                scene.remove(old.Visual);
+
+                world.removeCollider(old.Collider, true);
+                world.removeRigidBody(old.Hitbox);
+
+                const idx = createdObjects.indexOf(old);
+
+                if (idx !== -1) {
+                    createdObjects.splice(idx, 1);
+                }
+            }
             renderer.render(scene, camera)
+            
         }
         animate()
     })
