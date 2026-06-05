@@ -503,7 +503,7 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
                 delay +=1
             }else if (!spawned){
                 spawned = true
-                for (let i = 1; i < 40; i++) {
+                for (let i = 1; i < 75; i++) {
                     createObject({x: 0, y: 0, z: 0}, {x: randInt(-25,25), y: randInt(30,60), z: randInt(-25,25)}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene, 1, "rect", "evil.png", {Speed:randInt(60,105)/10, Health:1, MaxHP:1})  
                 }
             }
@@ -525,13 +525,7 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
                 if (checkCollision({OBBLocal:x.OBBLocal, OBBWorld:x.OBBWorld, Visual:x.Visual}, {OBBLocal:plr.OBBLocal, OBBWorld:plr.OBBWorld, Visual:plr.Visual}) && !reloading && iframes==0){
                     iframes=120
                     hp--
-                    if (hp==0){
-                        reloading = true
-                        for (let i=1;i<100;i++){
-                            createObject({x: 0, y: 0, z: 0}, {x: plr.Visual.position.x+randInt(-1,1)/10000, y: plr.Visual.position.y+randInt(-1,1)/10000, z: plr.Visual.position.z+randInt(-1,1)/10000}, {x:0.3,y:0.3,z:0.3}, 0xFFFFFF, world, scene, 1, "a", "rb4.png")    
-                        }
 
-                    }
                 }
             })
             if (hp==3){
@@ -541,7 +535,14 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
             }else if(hp==1){
                 plr.Visual.material.color.setRGB(1,0,0)
             }
-            if (hp>0){
+            if ((hp==0||plr.Visual.position.y<-40)&&!reloading){
+                reloading = true
+                for (let i=1;i<100;i++){
+                    createObject({x: 0, y: 0, z: 0}, {x: plr.Visual.position.x+randInt(-1,1)/10000, y: plr.Visual.position.y+randInt(-1,1)/10000, z: plr.Visual.position.z+randInt(-1,1)/10000}, {x:0.3,y:0.3,z:0.3}, 0xFFFFFF, world, scene, 1, "a", "rb4.png")    
+                }
+
+            }
+            if (!reloading){
                 const dir = new THREE.Vector3()
 
                 const forward = new THREE.Vector3()
@@ -586,12 +587,6 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
                 dir.normalize().multiplyScalar(0.0025);
                 const force = new RAPIER.Vector3(dir.x * 50, 0, dir.z * 50)
                 plr.Body.applyImpulse(force, true)
-            }
-            const p = plr.Body.translation()
-            const r = plr.Body.rotation()
-            plr.Visual.position.set(p.x, p.y, p.z)
-            plr.Visual.quaternion.set(r.x, r.y, r.z, r.w)
-            if (hp>0){
                 camera.position.x = lerpTo(camera.position.x,plr.Visual.position.x,0.025)
                 camera.position.y = lerpTo(camera.position.y,plr.Visual.position.y+10,0.025)
                 camera.position.z = lerpTo(camera.position.z,plr.Visual.position.z,0.025)
@@ -604,6 +599,10 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
                 const quaternion = temp.quaternion.clone();
                 camera.quaternion.slerp(temp.quaternion, 0.04);
             }
+            const p = plr.Body.translation()
+            const r = plr.Body.rotation()
+            plr.Visual.position.set(p.x, p.y, p.z)
+            plr.Visual.quaternion.set(r.x, r.y, r.z, r.w)
             while (terrainPieces.length > 300) {
 
                 const old = terrainPieces.shift();
