@@ -2,7 +2,8 @@ import { defineStore } from 'pinia'
 
 export const useAuthStore = defineStore('auth', {
   state: () => ({
-    isLoggedIn: false
+    isLoggedIn: false,
+    avatar: '/placeholder.jpg'
   }),
   actions: {
     login() {
@@ -10,6 +11,9 @@ export const useAuthStore = defineStore('auth', {
     },
     logout() {
       this.isLoggedIn = false
+    },
+    setAvatar(url: string) {
+      this.avatar = url
     }
   }
 })

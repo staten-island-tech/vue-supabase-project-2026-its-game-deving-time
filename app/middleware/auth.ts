@@ -1,9 +1,8 @@
-import { useAuthStore } from "~/store/auth"
-
-export default defineNuxtRouteMiddleware(() => {
-  const authStore = useAuthStore()
+export default defineNuxtRouteMiddleware(async () => {
+  const supabase = useSupabaseClient()
+  const { data } = await supabase.auth.getSession()
   
-  if (!authStore.isLoggedIn) {
+  if (!data.session) {
     return navigateTo('/')
   }
 })

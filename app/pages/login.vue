@@ -8,11 +8,11 @@
         <input type="password" class="input" placeholder="Password" v-model="password"/>
 
         <button class="btn btn-neutral mt-4" @click = "login">Login</button>
-        <button class="h-5" v-if="status === `L`" @click = "status = `S`">Click here to sign up.</button>
+        <button class="h-5 cursor-pointer hover:underline" v-if="status === `L`" @click = "status = `S`">Need an account? Sign up here.</button>
     </fieldset>
     <dialog id="errorModal" class="modal">
     <div class="modal-box">
-        <h3 class="text-lg text-center font-bold">Invalid Loggin Credentials</h3>
+        <h3 class="text-lg text-center font-bold">Invalid Credentials</h3>
         <p class="py-4">Check your password and username. Are you sure you are entering the correct credentials?</p>
         <div class="modal-action">
         <form method="dialog">
@@ -44,7 +44,7 @@ async function login(){
     } else{
         authStore.login()
         await nextTick()
-        await navigateTo('/test')
+        await navigateTo('/dashboard')
     }
 
 }

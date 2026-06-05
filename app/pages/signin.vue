@@ -8,7 +8,7 @@
         <input type="password" class="input" placeholder="Password" v-model="password"/>
 
         <button class="btn btn-neutral mt-4" @click = "signUp">Create Account</button>
-        <button class="h-5" v-if="status === `S`" @click = "status = `L`">Click here to log in.</button>
+        <button class="h-5 cursor-pointer hover:underline" v-if="status === `S`" @click = "status = `L`">Already have an account?</button>
     </fieldset>
     <dialog id="errorModal" class="modal">
     <div class="modal-box">
@@ -25,10 +25,12 @@
 
 <script lang = "ts" setup>
 import { status } from '~/global/global'
+import { useAuthStore } from '~/store/auth'     
 //supabase
 const supabase = useSupabaseClient()
 const username = ref('')
 const password = ref('')
+const authStore = useAuthStore()
 //error
 let errorMessageTitle = ref("")
 let errorMessage = ref("")
@@ -37,7 +39,7 @@ async function signUp() {
     const fakeEmail = username.value + "@gmail.com"
 
     if (!(isUsernameValid(username.value) && isPasswordValid(password.value))){
-        console.log("getTF out")
+        null
     } else{
         const { data: authData, error: authError } = await supabase.auth.signUp({
         email: fakeEmail,
@@ -50,9 +52,12 @@ async function signUp() {
             uuid: authData.user.id,
             Username: username.value
         } as any)
+
         if (playerError) throw playerError
 
-        await navigateTo('/test')
+        authStore.login()
+        await nextTick()
+        await navigateTo('/dashboard')
     }
 }
 function isUsernameValid(username: String){
@@ -73,7 +78,7 @@ function isUsernameValid(username: String){
 function isPasswordValid(password: String){
     if (password.length < 8){
         errorMessageTitle.value = "Invalid Password"
-        errorMessage.value = "Passwords should be more than 8 characters long.";
+        errorMessage.value = "Passwords should be at least 8 characters long.";
         (document.getElementById('errorModal') as HTMLDialogElement).showModal()
         return false
     } else if (password.includes(" ")){
