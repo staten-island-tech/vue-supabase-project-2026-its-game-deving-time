@@ -518,9 +518,9 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
             })
             enemies.forEach((x)=>{
                 const lookVector = new THREE.Vector3()
-                .subVectors(plr.Visual.position, x.Visual.position)
+                .subVectors((!reloading)?plr.Visual.position:camera.position, x.Visual.position)
                 .normalize()
-                .multiplyScalar(x.Speed/10);
+                .multiplyScalar((!reloading)?x.Speed/10:Math.sqrt(Math.abs(x.Visual.position.x-plr.Visual.position.x)+Math.abs(x.Visual.position.y-plr.Visual.position.y)+Math.abs(x.Visual.position.z-plr.Visual.position.z)));
                 x.Hitbox.applyImpulse(lookVector, true)
                 if (checkCollision({OBBLocal:x.OBBLocal, OBBWorld:x.OBBWorld, Visual:x.Visual}, {OBBLocal:plr.OBBLocal, OBBWorld:plr.OBBWorld, Visual:plr.Visual}) && !reloading && iframes==0){
                     iframes=120
