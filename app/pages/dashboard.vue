@@ -29,7 +29,9 @@
             </div>
         </div>
     </div>
-    <Profile :username = "username" v-if ='display === "Profile"'></Profile>
+    <Profile v-if ='display === "Profile"'></Profile>
+    <Settings v-if = "display === 'Settings'"></Settings>
+
 </template>
 <script lang = "ts" setup>
 definePageMeta({
@@ -37,6 +39,7 @@ definePageMeta({
 })
 
 import Profile from './Profile.vue'
+import Settings from './Settings.vue'
 import { useAuthStore } from '~/store/auth'
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
