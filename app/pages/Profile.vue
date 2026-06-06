@@ -1,6 +1,6 @@
 <template>
     <div class="flex justify-center align-middle pt-10 p-2">
-        <div class="card bg-base-100 w-96 shadow-sm">
+        <div class="card w-96 shadow-sm">
         <figure>
             <img class="w-50" :src="preview ?? image" alt="pfp" />
         </figure>

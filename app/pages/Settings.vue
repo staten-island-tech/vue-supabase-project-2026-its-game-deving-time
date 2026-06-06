@@ -1,18 +1,46 @@
 <template>
-    <div>
-        <div class="card bg-base-100 w-96 shadow-sm">
-        <div class="card-body">
-            <h2 class="card-title">Card Title</h2>
-            <p>A card component has a figure, a body part, and inside body there are title and actions parts</p>
-            <div class="card-actions justify-end">
-            <button class="btn btn-primary">Buy Now</button>
+<div class = "flex flex-col items-center p-10 overflow-y">
+    <div class="card w-200 shadow-sm">
+        <div class="flex flex-row card-body">
+            <div class = "flex flex-col w-[70%] justify-center items-center">
+                <h2 class="card-title">Dark Mode</h2>
+                <p>Make everything extremely dark and scary. Not for people who are afraid of the dark.</p>
             </div>
-        </div>
+            <div class = "flex items-center justify-center w-[30%]">
+                <input type="checkbox" v-model = "preferences.darkMode" :checked="darkMode" @click = "toggleDark" class="toggle toggle-warning" />
+            </div>
+
         </div>
     </div>
+</div>
+
+<!-- 
+colors from daisyui to use
+<input type="checkbox" checked="checked" class="toggle toggle-primary" />
+<input type="checkbox" checked="checked" class="toggle toggle-secondary" />
+<input type="checkbox" checked="checked" class="toggle toggle-accent" />
+<input type="checkbox" checked="checked" class="toggle toggle-neutral" />
+
+<input type="checkbox" checked="checked" class="toggle toggle-info" />
+<input type="checkbox" checked="checked" class="toggle toggle-success" />
+<input type="checkbox" checked="checked" class="toggle toggle-warning" />
+<input type="checkbox" checked="checked" class="toggle toggle-error" /> 
+-->
+
+
+
+
+
+
 </template>
 
 <script lang = "ts" setup>
+import { darkMode, toggleDark } from '~/global/global';
+
+const preferences = reactive({
+    darkMode: false,
+})
+
 
 </script>
 

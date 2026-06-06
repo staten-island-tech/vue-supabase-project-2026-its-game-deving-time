@@ -1,5 +1,5 @@
 <template>
-    <div class="navbar bg-base-100 shadow-sm">
+    <div class="navbar shadow-sm">
         <div class="flex-1">
             <button class="btn btn-ghost text-xl hover:text-blue-600" @click = "display = 'Dashboard'">Dashboard</button>
         </div>
@@ -17,7 +17,7 @@
             </div>
             <ul
                 tabindex="-1"
-                class="menu menu-sm dropdown-content bg-base-100 rounded-box z-1 mt-3 w-52 p-2 shadow">
+                class="menu menu-sm dropdown-content rounded-box z-1 mt-3 w-52 p-2 shadow">
                 <li>
                 <a class="justify-between hover:underline" @click = "display = 'Profile'">
                     Profile
