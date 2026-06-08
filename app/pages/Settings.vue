@@ -7,39 +7,28 @@
                 <p>Make everything extremely dark and scary. Not for people who are afraid of the dark.</p>
             </div>
             <div class = "flex items-center justify-center w-[30%]">
-                <input type="checkbox" v-model = "preferences.darkMode" :checked="darkMode" @click = "toggleDark" class="toggle toggle-warning" />
+                <input type="checkbox" :checked = "preferences.wantDarkMode" @change = "toggleDark" class="bg-white! toggle toggle-neutral" />
             </div>
 
         </div>
     </div>
 </div>
 
-<!-- 
-colors from daisyui to use
-<input type="checkbox" checked="checked" class="toggle toggle-primary" />
-<input type="checkbox" checked="checked" class="toggle toggle-secondary" />
-<input type="checkbox" checked="checked" class="toggle toggle-accent" />
-<input type="checkbox" checked="checked" class="toggle toggle-neutral" />
-
-<input type="checkbox" checked="checked" class="toggle toggle-info" />
-<input type="checkbox" checked="checked" class="toggle toggle-success" />
-<input type="checkbox" checked="checked" class="toggle toggle-warning" />
-<input type="checkbox" checked="checked" class="toggle toggle-error" /> 
--->
-
-
-
-
-
-
 </template>
 
 <script lang = "ts" setup>
+const supabase = useSupabaseClient()
+const user = useSupabaseUser()
+
 import { darkMode, toggleDark } from '~/global/global';
 
 const preferences = reactive({
-    darkMode: false,
+    wantDarkMode: darkMode.value,
 })
+
+async function updatePreferences(){
+    const {data, error} = await supabase.from("Preferences")
+}
 
 
 </script>
