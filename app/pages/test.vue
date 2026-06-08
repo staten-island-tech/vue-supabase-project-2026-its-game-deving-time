@@ -1,5 +1,5 @@
 <template>
-    <h1>What</h1>
+    <h1 id="id">What</h1>
 </template>
 
 <script lang="ts" setup>
@@ -114,7 +114,6 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
         return (b*t)+(1-t)*a
     }
 
-    
     onMounted(()=>{
         const brij = new Audio('/bruh.mp3')
         const world = new RAPIER.World({x:0, y:-9.81, z:0})
@@ -452,8 +451,8 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
         }
         const terrainTypes = [
             flat, hill, steepHill, slope, turn, curve, bridge, zigzag, bumpy,
-            stairsUp, plateau, ridge, sCurve, valley, spiralDown, chicane,
-            rollingHills, rooftop, corkscrew, funnel, stairsDown
+            stairsUp, plateau, ridge, sCurve, valley, chicane,
+            rollingHills, rooftop, corkscrew, funnel
         ];
 
         let prev = new THREE.Vector3(0, 0, 20);
@@ -474,7 +473,7 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
                 prevnum = rand;
 
                 const pick = terrainTypes[rand] ?? flat;
-
+                console.log(pick)
                 const result = pick(prev, prevQuat);
 
                 prev = result.pos;
@@ -487,17 +486,30 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
             prevQuat = res.quat;
         }
 
-        generateChunk(20);
+        generateChunk(5);
         //------------------
         let delay = 0
         let spawned = false
+        let points = 0
         const animate = (): void => {
             requestAnimationFrame(animate)
             world.step()
+            if (!reloading){
+            const velocitycurrent = plr.Body.linvel()
+            const candidatex = Math.max(0.1,Math.abs(velocitycurrent.x)/10)
+            const candidatez = Math.max(0.1,Math.abs(velocitycurrent.z)/10)
+            points += (candidatex>=candidatez)?candidatex:candidatez
+            const scoreboard = document.getElementById("id")
+            if (scoreboard)scoreboard.textContent = `${Math.round(points)}`
+            
+            }
             const playerPos = plr.Visual.position;
-
             if (playerPos.distanceTo(prev) < 100) {
                 generateChunk(3);
+                for (let i = 0; i < 3; i++) {
+                    createObject({x: 0, y: 0, z: 0}, {x: randInt(-25,25)+plr.Visual.position.x, y: randInt(30,60)+plr.Visual.position.y, z: randInt(-25,25)+plr.Visual.position.z}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene, 1, "rect", "evil.png", {Speed:randInt(60,105)/10, Health:1, MaxHP:1})  
+                }
+
             }
             if (delay < 500){
                 delay +=1
@@ -520,7 +532,7 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
                 const lookVector = new THREE.Vector3()
                 .subVectors((!reloading)?plr.Visual.position:camera.position, x.Visual.position)
                 .normalize()
-                .multiplyScalar((!reloading)?x.Speed/10:Math.sqrt(Math.abs(x.Visual.position.x-plr.Visual.position.x)+Math.abs(x.Visual.position.y-plr.Visual.position.y)+Math.abs(x.Visual.position.z-plr.Visual.position.z)));
+                .multiplyScalar((!reloading)?x.Speed/10:5);
                 x.Hitbox.applyImpulse(lookVector, true)
                 if (checkCollision({OBBLocal:x.OBBLocal, OBBWorld:x.OBBWorld, Visual:x.Visual}, {OBBLocal:plr.OBBLocal, OBBWorld:plr.OBBWorld, Visual:plr.Visual}) && !reloading && iframes==0){
                     iframes=120
