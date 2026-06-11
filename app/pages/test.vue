@@ -1,6 +1,25 @@
 <template>
-    <h1 id="id">What</h1>
-</template>
+  <svg id="scoresvg" class="absolute top-4 left-1/2 -translate-x-1/2" :width="svgWidth" height="80" :viewBox="`0 0 ${svgWidth} 80`" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <linearGradient id="grad" x1="0%" y1="0%" x2="0%" y2="100%">
+        <stop offset="0%" stop-color="white"/>
+        <stop offset="100%" stop-color="gray"/>
+      </linearGradient>
+    </defs>
+    <text
+      id="id"
+      x="50%"
+      y="70%"
+      text-anchor="middle"
+      font-family="Montserrat, sans-serif"
+      font-size="64"
+      fill="url(#grad)"
+      stroke="black"
+      stroke-width="9"
+      stroke-linejoin="round"
+      paint-order="stroke fill"
+    >0</text>
+  </svg></template>
 
 <script lang="ts" setup>
 /*definePageMeta({
@@ -14,7 +33,6 @@
     import type RAPIERtype from '@dimforge/rapier3d-compat'
     import { OBB } from 'three/examples/jsm/math/OBB.js';
     import { lerp, randInt } from 'three/src/math/MathUtils.js';
-import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
     const RAPIER = await import('@dimforge/rapier3d-compat')
     await RAPIER.init()
     const loader = new THREE.TextureLoader();
@@ -213,6 +231,8 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
 
             return { ...localRotation, x: clampedX };
         }
+        const MIN_TERRAIN_Y = -10; // tune this — terrain won't go below this height
+
         function safeLandPiece(
             pos: THREE.Vector3,
             quat: THREE.Quaternion,
@@ -220,7 +240,12 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
             size: {x:number, y:number, z:number},
             texture: string
         ) {
-            return landPiece(pos, quat, clampedPitch(quat, rotation), size, texture);
+            // If we're already near the floor, force flat (no downward pitch)
+            const clampedRotation = pos.y <= MIN_TERRAIN_Y
+                ? { ...rotation, x: Math.max(0, rotation.x) }  // only allow upward or flat pitch
+                : rotation;
+
+            return landPiece(pos, quat, clampedPitch(quat, clampedRotation), size, texture);
         }
         // Flat straight section
         function flat(start: THREE.Vector3, startQuat: THREE.Quaternion) {
@@ -452,7 +477,7 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
         const terrainTypes = [
             flat, hill, steepHill, slope, turn, curve, bridge, zigzag, bumpy,
             stairsUp, plateau, ridge, sCurve, valley, chicane,
-            rollingHills, rooftop, corkscrew, funnel
+            rollingHills, rooftop, corkscrew, funnel, spiralDown, stairsDown
         ];
 
         let prev = new THREE.Vector3(0, 0, 20);
@@ -461,32 +486,29 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
 
         const terrainPieces: cubeholder[] = [];
 
-        function generateChunk(count = 10) {
+        function generateChunk(count:number,start?:boolean) {
+            let pick
             for (let i = 0; i < count; i++) {
-
+                if (!start){
                 let rand = randInt(0, terrainTypes.length - 1);
-
                 while (rand === prevnum) {
                     rand = randInt(0, terrainTypes.length - 1);
                 }
-
                 prevnum = rand;
-
-                const pick = terrainTypes[rand] ?? flat;
-                console.log(pick)
+                
+                // If terrain is low, force a flat or upward section instead
+                const tooLow = prev.y < MIN_TERRAIN_Y + 5;
+                pick = tooLow ? (hill) : (terrainTypes[rand] ?? flat);
+            }else{
+                pick = flat
+            }
                 const result = pick(prev, prevQuat);
-
                 prev = result.pos;
                 prevQuat = result.quat;
             }
         }
-        for (let i = 0; i < 2; i++) {
-            const res = flat(prev, prevQuat);
-            prev = res.pos;
-            prevQuat = res.quat;
-        }
-
-        generateChunk(5);
+        generateChunk(3,true);
+        generateChunk(3)
         //------------------
         let delay = 0
         let spawned = false
@@ -495,18 +517,17 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
             requestAnimationFrame(animate)
             world.step()
             if (!reloading){
-            const velocitycurrent = plr.Body.linvel()
-            const candidatex = Math.max(0.1,Math.abs(velocitycurrent.x)/10)
-            const candidatez = Math.max(0.1,Math.abs(velocitycurrent.z)/10)
-            points += (candidatex>=candidatez)?candidatex:candidatez
-            const scoreboard = document.getElementById("id")
-            if (scoreboard)scoreboard.textContent = `${Math.round(points)}`
-            
+                const velocitycurrent = plr.Body.linvel()
+                const candidatex = Math.max(0.025,Math.abs(velocitycurrent.x)/100)
+                const candidatez = Math.max(0.025,Math.abs(velocitycurrent.z)/100)
+                points += (candidatex>=candidatez)?candidatex:candidatez
+                const scoreboard = document.getElementById("id")
+                if (scoreboard)scoreboard.textContent = `${Math.round(points)}`
             }
             const playerPos = plr.Visual.position;
-            if (playerPos.distanceTo(prev) < 100) {
-                generateChunk(3);
-                for (let i = 0; i < 3; i++) {
+            if (playerPos.distanceTo(prev) < 150) {
+                generateChunk(5);
+                for (let i = 0; i < 5; i++) {
                     createObject({x: 0, y: 0, z: 0}, {x: randInt(-25,25)+plr.Visual.position.x, y: randInt(30,60)+plr.Visual.position.y, z: randInt(-25,25)+plr.Visual.position.z}, {x:1,y:1,z:1}, 0xFFFFFF, world, scene, 1, "rect", "evil.png", {Speed:randInt(60,105)/10, Health:1, MaxHP:1})  
                 }
 
@@ -594,7 +615,7 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
                 const hit = world.castRay(ray, 0.15, true)
                 const grounded = hit !== null
                 if (keysdown['Space'] && grounded) {
-                    plr.Body.applyImpulse({x: 0, y: 1, z: 0}, true)
+                    plr.Body.applyImpulse({x: 0, y: 1.5, z: 0}, true)
                 }
                 dir.normalize().multiplyScalar(0.0025);
                 const force = new RAPIER.Vector3(dir.x * 50, 0, dir.z * 50)
@@ -639,4 +660,5 @@ import { x } from 'vue-router/dist/useApi-D6ckOsFy.js';
     })
 </script>
 
-<style scoped></style>
+<style scoped>
+</style>
