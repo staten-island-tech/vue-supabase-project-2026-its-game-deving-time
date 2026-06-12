@@ -25,7 +25,7 @@
 </template>
 
 <script lang = "ts" setup>
-import { status } from '~/global/global'
+import { status} from '~/global/global'
 import { useAuthStore } from '~/store/auth'
 
 const supabase = useSupabaseClient()
@@ -48,7 +48,6 @@ async function login(){
     }
 
 }
-
 
 
 </script>
