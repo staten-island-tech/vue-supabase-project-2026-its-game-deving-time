@@ -38,6 +38,7 @@ definePageMeta({
   middleware: 'auth' as any
 })
 
+import { darkMode } from '~/global/global.js'
 import Profile from './Profile.vue'
 import Settings from './Settings.vue'
 import { useAuthStore } from '~/store/auth'
@@ -59,6 +60,7 @@ const display = ref('Dashboard')
 
 async function Logout(){
     await supabase.auth.signOut()
+    darkMode.value = false
     await navigateTo('/')
 }
 

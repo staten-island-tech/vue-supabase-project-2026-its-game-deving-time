@@ -7,7 +7,7 @@
                 <p>Make everything extremely dark and scary. Not for people who are afraid of the dark.</p>
             </div>
             <div class = "flex items-center justify-center w-[30%]">
-                <input type="checkbox" :checked = "preferences.wantDarkMode" @change = "() => {toggleDark(); savePreferences()}" class="bg-white! toggle toggle-neutral" />
+                <input type="checkbox" :checked = "darkMode" @change = "() => {toggleDark(); savePreferences()}" class="bg-white! toggle toggle-neutral" />
             </div>
 
         </div>
@@ -17,13 +17,9 @@
 </template>
 
 <script lang = "ts" setup>
-import { darkMode} from '~/global/global';
+import { darkMode, downloadPreferences} from '~/global/global';
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
-
-const preferences = reactive({
-    wantDarkMode: darkMode.value,
-})
 
 function toggleDark(){
     darkMode.value = !darkMode.value
@@ -32,9 +28,8 @@ async function savePreferences(){
     if (!user.value) return
     console.log(user.value)
 
-    const {error} = await supabase.from("Preferences").upsert({uuid: user.value.uuid, darkMode: darkMode.value})
+    const {error} = await supabase.from("Preferences").upsert({uuid: user.value.sub, darkMode: darkMode.value} as any, {onConflict:"uuid"})
     if (error){
-        console.log(error + " Failed to save preferences.")
         throw error
     }
 }
