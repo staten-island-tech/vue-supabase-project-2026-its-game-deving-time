@@ -51,7 +51,7 @@
     }
     const createdObjects: cubeholder[] = []
     const enemies: (enemy & cubeholder)[] = []
-    const terrainPieces: cubeholder[] = [];
+    const terrainPieces: (cubeholder&{Lifetime:number})[] = [];
     function createObject(
         rotation: {x:number,y:number,z:number},
         position: {x:number,y:number,z:number},
@@ -63,7 +63,7 @@
         texture: string,
         enemydata?: enemy){
 
-            const geo = (shape=="rect") ? new THREE.BoxGeometry(size.x,size.y,size.z)
+            const geo = (shape=="rect") ? new THREE.BoxGeometry(size.x,(type==2)?size.y+1:size.y,size.z)
             : new THREE.SphereGeometry(size.x/2, 32, 16)
 
             let material = new THREE.MeshStandardMaterial({color:color})
@@ -87,7 +87,7 @@
             } else {
                 hitboxdesc = world.createRigidBody(RAPIER.RigidBodyDesc.kinematicPositionBased().setTranslation(position.x,position.y,position.z).setRotation({x:quater.x,y:quater.y,z:quater.z,w:quater.w}))
             }
-            const coldesc = (shape=="rect") ? RAPIER.ColliderDesc.cuboid(size.x/2, size.y/2, size.z/2)
+            const coldesc = (shape=="rect") ? RAPIER.ColliderDesc.cuboid(size.x/2, (type==2)?size.y/2+0.5:size.y/2, size.z/2)
             : RAPIER.ColliderDesc.ball(size.x/2)
             const collider = world.createCollider(coldesc, hitboxdesc)
             const box3 = new THREE.Box3().setFromObject(cube)
@@ -111,7 +111,15 @@
             createdObjects.push(obj);
 
             if (type === 2) {
-                terrainPieces.push(obj);
+                terrainPieces.push({
+                    Visual: cube, 
+                    Hitbox: hitboxdesc,
+                    Box: box3,
+                    OBBLocal: obbLocal,
+                    OBBWorld: obbWorld,
+                    Collider:collider,
+                    Lifetime:875
+                })
             }
             if (enemydata !== undefined){
                 enemies.push({
@@ -483,9 +491,6 @@
         let prev = new THREE.Vector3(0, 0, 20);
         let prevQuat = new THREE.Quaternion();
         let prevnum = -1;
-
-        const terrainPieces: cubeholder[] = [];
-
         function generateChunk(count:number,start?:boolean) {
             let pick
             for (let i = 0; i < count; i++) {
@@ -513,9 +518,36 @@
         let delay = 0
         let spawned = false
         let points = 0
+        const toRemove: (cubeholder & {Lifetime: number})[] = []
         const animate = (): void => {
             requestAnimationFrame(animate)
+            // AI GENERATED
+            toRemove.forEach((x) => {
+                scene.remove(x.Visual)
+                world.removeRigidBody(x.Hitbox)
+
+                const ti = terrainPieces.indexOf(x)
+                if (ti !== -1) terrainPieces.splice(ti, 1)
+
+                const ci = createdObjects.indexOf(x)
+                if (ci !== -1) createdObjects.splice(ci, 1)
+            })
+            toRemove.length = 0
+            //-------------------
             world.step()
+            terrainPieces.forEach((x) => {
+                x.Lifetime -= 1
+
+                if (x.Lifetime < 300) {
+                    const t = x.Lifetime / 300
+                    const mat = x.Visual.material as THREE.MeshStandardMaterial
+                    mat.color.setRGB(1, t, t)
+                }
+
+                if (x.Lifetime <= 0) {
+                    toRemove.push(x)
+                }
+            })
             if (!reloading){
                 const velocitycurrent = plr.Body.linvel()
                 const candidatex = Math.max(0.025,Math.abs(velocitycurrent.x)/100)
@@ -532,7 +564,7 @@
                 }
 
             }
-            if (delay < 500){
+            if (delay < 500000090){
                 delay +=1
             }else if (!spawned){
                 spawned = true
@@ -541,13 +573,14 @@
                 }
             }
             iframes = Math.max(0,iframes-1)
-            createdObjects.forEach((x)=>{
+            createdObjects.forEach((x) => {
+                if (!world.getRigidBody(x.Hitbox.handle)) return 
                 const pos = x.Hitbox.translation()
                 const rot = x.Hitbox.rotation()
                 x.Visual.position.set(pos.x, pos.y, pos.z)
                 x.Visual.quaternion.set(rot.x, rot.y, rot.z, rot.w)
-                x.Visual.updateMatrixWorld();
-                x.OBBWorld.copy(x.OBBLocal).applyMatrix4(x.Visual.matrixWorld);
+                x.Visual.updateMatrixWorld()
+                x.OBBWorld.copy(x.OBBLocal).applyMatrix4(x.Visual.matrixWorld)
             })
             enemies.forEach((x)=>{
                 const lookVector = new THREE.Vector3()
@@ -561,6 +594,7 @@
 
                 }
             })
+
             if (hp==3){
                 plr.Visual.material.color.setRGB(1,1,1)
             }else if(hp ==2){
@@ -636,23 +670,6 @@
             const r = plr.Body.rotation()
             plr.Visual.position.set(p.x, p.y, p.z)
             plr.Visual.quaternion.set(r.x, r.y, r.z, r.w)
-            while (terrainPieces.length > 300) {
-
-                const old = terrainPieces.shift();
-
-                if (!old) break;
-
-                scene.remove(old.Visual);
-
-                world.removeCollider(old.Collider, true);
-                world.removeRigidBody(old.Hitbox);
-
-                const idx = createdObjects.indexOf(old);
-
-                if (idx !== -1) {
-                    createdObjects.splice(idx, 1);
-                }
-            }
             renderer.render(scene, camera)
             
         }
