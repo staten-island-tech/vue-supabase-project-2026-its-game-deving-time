@@ -6,6 +6,7 @@ export const darkMode = ref(false)
 
 export async function downloadPreferences(supabase, user){
     const {data, error} = await supabase.from("Preferences").select("darkMode").eq("uuid", user.value?.sub)
+    console.log(user.value)
     if (error){
         throw error
     } else if (data.length === 0){
@@ -26,8 +27,6 @@ export async function saveScore(supabase, user, points){
 
     if (points > bestScore){
         const {error} = await supabase.from("Leaderboard").upsert({uuid: user.value?.sub, Highest: Math.round(points)}, {onConflict:"uuid"})
-        console.log("congrats idiot")
-        console.log(error)
     }
 
 

@@ -22,10 +22,9 @@
   </svg></template>
 
 <script lang="ts" setup>
-/*definePageMeta({
+definePageMeta({
   middleware: 'auth' as any
 })
-*/
     import { saveScore } from '~/global/global';
     import type { World } from '@dimforge/rapier3d-compat';
     import * as THREE from 'three';
