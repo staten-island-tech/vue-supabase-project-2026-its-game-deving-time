@@ -26,7 +26,7 @@
   middleware: 'auth' as any
 })
 */
-
+    import { saveScore } from '~/global/global';
     import type { World } from '@dimforge/rapier3d-compat';
     import * as THREE from 'three';
     import { onMounted } from 'vue';
@@ -52,6 +52,10 @@
     const createdObjects: cubeholder[] = []
     const enemies: (enemy & cubeholder)[] = []
     const terrainPieces: cubeholder[] = [];
+
+    const supabase = useSupabaseClient()
+    const user = useSupabaseUser()
+
     function createObject(
         rotation: {x:number,y:number,z:number},
         position: {x:number,y:number,z:number},
@@ -570,6 +574,7 @@
             }
             if ((hp==0||plr.Visual.position.y<-40)&&!reloading){
                 reloading = true
+                saveScore(supabase, user, points)
                 for (let i=1;i<100;i++){
                     createObject({x: 0, y: 0, z: 0}, {x: plr.Visual.position.x+randInt(-1,1)/10000, y: plr.Visual.position.y+randInt(-1,1)/10000, z: plr.Visual.position.z+randInt(-1,1)/10000}, {x:0.3,y:0.3,z:0.3}, 0xFFFFFF, world, scene, 1, "a", "rb4.png")    
                 }
