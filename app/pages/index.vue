@@ -1,7 +1,6 @@
 <template>
 <div>
     <div class = "flex fixed bg-blue-500 w-full justify-center">
-      <!-- Navagation -->
     <div class="navbar bg-base-100 shadow-sm">
       <div class="flex-none">
         <button class="btn btn-square btn-ghost">
@@ -20,7 +19,6 @@
       </div>
     </div>
     </div>
-    <!-- Login (and no this comment isn't AI generated) -->
     <div class = "flex flex-col justify-center items-center w-full h-screen bg-amber-500 p-5">
       <signin v-if="status === `S`"></signin>
       <login v-if="status === `L`"></login>

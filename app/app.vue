@@ -1,19 +1,17 @@
 <template>
-  <ClientOnly>
-    <div class = "w-full h-full" :class="darkMode ? 'bg-black' : 'bg-white'">
-      <NuxtPage/>
-    </div>
-  </ClientOnly>
+  <NuxtPage/>
 </template>
 
-<script lang = "ts" setup>
-import { darkMode, downloadPreferences} from './global/global';
+<script lang="ts" setup>
+import { darkMode, downloadPreferences } from './global/global'
 import { computed } from 'vue'
+
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 
-
-downloadPreferences(supabase, user)
+if (user.value) {
+  await downloadPreferences(supabase, user)
+}
 
 useHead({
   bodyAttrs: {
