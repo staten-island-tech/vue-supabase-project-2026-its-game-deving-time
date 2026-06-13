@@ -1,5 +1,5 @@
 <template>
-<div>
+<div class = "text-black">
     <div class = "flex fixed bg-blue-500 w-full justify-center">
     <div class="navbar bg-base-100 shadow-sm">
       <div class="flex-none">
@@ -29,7 +29,9 @@
 <script setup>
 import login from './login.vue';
 import signin from './signin.vue';
-import { status } from '~/global/global';
+import { status} from '~/global/global';
+
+
 
 </script>
 

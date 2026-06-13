@@ -1,4 +1,5 @@
 <template>
+<div class = "flex flex-row justify-center p-6">
   <div class="flex justify-center p-6">
     <div class="card w-100 shadow-sm">
       <p class="text-lg text-center"><b>Leaderboard</b></p>
@@ -14,6 +15,15 @@
       </ul>
     </div>
   </div>
+  <div class="flex flex-col justify-center items-center w-80 h-75">
+    <button class="h-50 overflow-hidden hover:cursor-pointer" @click = "gameTime">
+      <img src="https://media0.giphy.com/media/v1.Y2lkPTc5MGI3NjExNWkzaXd3c3FlcjRtZnkybnA5dHVlMnJ6Mnc5MG5pZWs2cTdkeXpzaiZlcD12MV9pbnRlcm5hbF9naWZfYnlfaWQmY3Q9Zw/atLkXCLfT1dza/giphy.gif" 
+      class="w-full h-full object-cover" />
+    </button>
+    <p class = "text-lg"><b>Ready?</b></p>
+    <p class = "text-lg">Click the portal to start!</p>
+  </div>
+</div>
 </template>
 
 <script lang = "ts" setup>
@@ -40,8 +50,13 @@ async function retrieveLeaderboard() {
   leaderboard.value = scores.map((score: any) => ({
     Highest: score.Highest,
     username: players.find((p: any) => p.uuid === score.uuid)?.Username ?? 'Unknown',
-    avatar: players.find((p: any) => p.uuid === score.uuid)?.avatar ?? null
+    avatar: players.find((p: any) => p.uuid === score.uuid)?.avatar ?? "/placeholder.jpg"
   }))
+}
+
+async function gameTime(){
+  await nextTick()
+  await navigateTo('/game')
 }
 
 retrieveLeaderboard()

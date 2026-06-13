@@ -19,7 +19,28 @@
       stroke-linejoin="round"
       paint-order="stroke fill"
     >0</text>
-  </svg></template>
+  </svg>
+    <svg class="absolute top-4 left-4" width="200" height="30" viewBox="0 0 400 60" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+        <linearGradient id="grad" x1="0%" y1="0%" x2="100%" y2="0%">
+        <stop offset="0%" stop-color="white"/>
+        <stop offset="100%" stop-color="gray"/>
+        </linearGradient>
+    </defs>
+    <text
+        x="0%"
+        y="70%"
+        text-anchor="start"
+        font-family="Montserrat, sans-serif"
+        font-size="28"
+        fill="url(#grad)"
+        stroke="black"
+        stroke-width="4"
+        stroke-linejoin="round"
+        paint-order="stroke fill"
+    >Logged in as: {{ user?.value }}</text>
+    </svg>
+</template>
 
 <script lang="ts" setup>
 definePageMeta({
@@ -31,7 +52,7 @@ definePageMeta({
     import { onMounted } from 'vue';
     import type RAPIERtype from '@dimforge/rapier3d-compat'
     import { OBB } from 'three/examples/jsm/math/OBB.js';
-    import { lerp, randInt } from 'three/src/math/MathUtils.js';
+    import {randInt } from 'three/src/math/MathUtils.js';
     const RAPIER = await import('@dimforge/rapier3d-compat')
     await RAPIER.init()
     const loader = new THREE.TextureLoader();
