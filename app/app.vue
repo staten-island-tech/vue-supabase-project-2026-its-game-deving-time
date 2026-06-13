@@ -17,6 +17,7 @@ watch(user, (newUser) => {
 watch(darkMode, (val) => {
   if (import.meta.client) {
     document.body.className = val ? '!bg-black text-white' : '!bg-white text-black'
+    document.documentElement.classList.toggle('dark', val)
   }
 }, { immediate: true })
 </script>

@@ -31,6 +31,7 @@
     </div>
     <Profile v-if ='display === "Profile"'></Profile>
     <Settings v-if = "display === 'Settings'"></Settings>
+    <Others v-if = "display === 'Dashboard'"></Others>
 
 </template>
 <script lang = "ts" setup>
@@ -42,6 +43,7 @@ import { darkMode } from '~/global/global.js'
 import Profile from './Profile.vue'
 import Settings from './Settings.vue'
 import { useAuthStore } from '~/store/auth'
+import Others from './Others.vue'
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 const authStore = useAuthStore()
