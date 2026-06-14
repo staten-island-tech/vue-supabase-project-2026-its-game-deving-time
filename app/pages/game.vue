@@ -38,14 +38,16 @@
         stroke-width="4"
         stroke-linejoin="round"
         paint-order="stroke fill"
-    >Logged in as: {{ user }}</text>
+    >Logged in as: {{user ? user.email!.split("@")[0] : ""}}</text>
     </svg>
+
     <div class="modal" :class="{ 'modal-open': isGameOver }">
-        <div class="modal-box bg-black/50">
-        <h3 class="text-lg font-bold">Game Over!</h3>
-        <p class="py-4">Better luck next time!</p>
-        <div class="modal-action">
-            <button class="btn" @click="isGameOver = false">Try again!</button>
+        <div class="modal-box bg-base-100/50">
+        <h3 class="text-lg text-center font-bold">Game Over!</h3>
+        <p class="py-4 text-center">Your score is {{ Math.round(points)}}.</p>
+        <div class="flex justify-center">
+            <button class="btn m-2" @click="navigateTo('/dashboard', { external: true })">Return to dashboard</button>
+            <button class="btn m-2" @click="reloadNuxtApp()">Retry</button>
         </div>
         </div>
     </div>
@@ -82,9 +84,13 @@ definePageMeta({
     const enemies: (enemy & cubeholder)[] = []
     const terrainPieces: cubeholder[] = [];
 
+    let points = ref(0)
     const isGameOver = ref(false)
     const supabase = useSupabaseClient()
     const user = useSupabaseUser()
+    const scoreToBeat = ref("")
+    const svgWidth = ref(300)
+    
 
     function createObject(
         rotation: {x:number,y:number,z:number},
@@ -546,7 +552,6 @@ definePageMeta({
         //------------------
         let delay = 0
         let spawned = false
-        let points = 0
         const animate = (): void => {
             requestAnimationFrame(animate)
             world.step()
@@ -554,9 +559,9 @@ definePageMeta({
                 const velocitycurrent = plr.Body.linvel()
                 const candidatex = Math.max(0.025,Math.abs(velocitycurrent.x)/100)
                 const candidatez = Math.max(0.025,Math.abs(velocitycurrent.z)/100)
-                points += (candidatex>=candidatez)?candidatex:candidatez
+                points.value += (candidatex>=candidatez)?candidatex:candidatez
                 const scoreboard = document.getElementById("id")
-                if (scoreboard)scoreboard.textContent = `${Math.round(points)}`
+                if (scoreboard)scoreboard.textContent = `${Math.round(points.value)}`
             }
             const playerPos = plr.Visual.position;
             if (playerPos.distanceTo(prev) < 150) {
@@ -604,11 +609,15 @@ definePageMeta({
             }
             if ((hp==0||plr.Visual.position.y<-40)&&!reloading){
                 reloading = true;
-                saveScore(supabase, user, points);
-                isGameOver.value = true
+                saveScore(supabase, user, points.value);
                 for (let i=1;i<100;i++){
                     createObject({x: 0, y: 0, z: 0}, {x: plr.Visual.position.x+randInt(-1,1)/10000, y: plr.Visual.position.y+randInt(-1,1)/10000, z: plr.Visual.position.z+randInt(-1,1)/10000}, {x:0.3,y:0.3,z:0.3}, 0xFFFFFF, world, scene, 1, "a", "rb4.png")    
                 }
+                setTimeout(() => {
+                    isGameOver.value = true
+                }, 0)
+                
+                
 
             }
             if (!reloading){
