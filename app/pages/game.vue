@@ -557,6 +557,7 @@ definePageMeta({
         //------------------
         let delay = 0
         let spawned = false
+        const toRemove: (cubeholder & {Lifetime: number})[] = []
         const animate = (): void => {
             requestAnimationFrame(animate)
             // AI GENERATED
@@ -648,7 +649,7 @@ definePageMeta({
                 }
                 setTimeout(() => {
                     isGameOver.value = true
-                }, 0)
+                }, 2000)
                 
                 
 
