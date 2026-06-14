@@ -40,13 +40,22 @@
         paint-order="stroke fill"
     >Logged in as: {{ user }}</text>
     </svg>
+    <div class="modal" :class="{ 'modal-open': isGameOver }">
+        <div class="modal-box bg-black/50">
+        <h3 class="text-lg font-bold">Game Over!</h3>
+        <p class="py-4">Better luck next time!</p>
+        <div class="modal-action">
+            <button class="btn" @click="isGameOver = false">Try again!</button>
+        </div>
+        </div>
+    </div>
 </template>
 
 <script lang="ts" setup>
 definePageMeta({
   middleware: 'auth' as any
 })
-    import { saveScore } from '~/global/global';
+    import { saveScore, darkMode} from '~/global/global';
     import type { World } from '@dimforge/rapier3d-compat';
     import * as THREE from 'three';
     import { onMounted } from 'vue';
@@ -73,6 +82,7 @@ definePageMeta({
     const enemies: (enemy & cubeholder)[] = []
     const terrainPieces: cubeholder[] = [];
 
+    const isGameOver = ref(false)
     const supabase = useSupabaseClient()
     const user = useSupabaseUser()
 
@@ -593,8 +603,9 @@ definePageMeta({
                 plr.Visual.material.color.setRGB(1,0,0)
             }
             if ((hp==0||plr.Visual.position.y<-40)&&!reloading){
-                reloading = true
-                saveScore(supabase, user, points)
+                reloading = true;
+                saveScore(supabase, user, points);
+                isGameOver.value = true
                 for (let i=1;i<100;i++){
                     createObject({x: 0, y: 0, z: 0}, {x: plr.Visual.position.x+randInt(-1,1)/10000, y: plr.Visual.position.y+randInt(-1,1)/10000, z: plr.Visual.position.z+randInt(-1,1)/10000}, {x:0.3,y:0.3,z:0.3}, 0xFFFFFF, world, scene, 1, "a", "rb4.png")    
                 }
