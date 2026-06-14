@@ -6,3 +6,10 @@ html, body {
     height: 100%;
     background: inherit;
 }
+
+@layer base {
+  .dark * {
+    border-color: rgb(255, 255, 255);
+    --tw-shadow-color: rgb(255, 255, 255);
+  }
+}

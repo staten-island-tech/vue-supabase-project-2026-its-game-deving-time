@@ -6,6 +6,7 @@ export const darkMode = ref(false)
 
 export async function downloadPreferences(supabase, user){
     const {data, error} = await supabase.from("Preferences").select("darkMode").eq("uuid", user.value?.sub)
+    console.log(user.value)
     if (error){
         throw error
     } else if (data.length === 0){
@@ -13,6 +14,24 @@ export async function downloadPreferences(supabase, user){
     } else{
         darkMode.value = data[0].darkMode
     }
+}
+
+export async function saveScore(supabase, user, points){
+    let bestScore = 0
+    const {data, error} = await supabase.from("Leaderboard").select("Highest").eq("uuid", user.value?.sub)
+    if (error) throw error
+
+    if (!(data.length === 0)){
+        bestScore = data[0].Highest
+    }
+
+    if (points > bestScore){
+        const {error} = await supabase.from("Leaderboard").upsert({uuid: user.value?.sub, Highest: Math.round(points)}, {onConflict:"uuid"})
+    }
+
+
+
+
 }
 
 async function defaultPreferences(supabase, user){

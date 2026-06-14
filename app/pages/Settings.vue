@@ -17,7 +17,7 @@
 </template>
 
 <script lang = "ts" setup>
-import { darkMode, downloadPreferences} from '~/global/global';
+import { darkMode} from '~/global/global';
 const supabase = useSupabaseClient()
 const user = useSupabaseUser()
 
