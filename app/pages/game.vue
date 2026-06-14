@@ -38,7 +38,7 @@
         stroke-width="4"
         stroke-linejoin="round"
         paint-order="stroke fill"
-    >Logged in as: {{ user?.value }}</text>
+    >Logged in as: {{ user }}</text>
     </svg>
 </template>
 
