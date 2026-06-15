@@ -158,7 +158,7 @@ definePageMeta({
                     OBBLocal: obbLocal,
                     OBBWorld: obbWorld,
                     Collider:collider,
-                    Lifetime:2625
+                    Lifetime:99999
                 })
             }
             if (enemydata !== undefined){
@@ -613,6 +613,8 @@ definePageMeta({
             }
             iframes = Math.max(0,iframes-1)
             createdObjects.forEach((x) => {
+                if (toRemove.includes(x as any)) return  // skip if about to be removed
+                if (!world.getRigidBody(x.Hitbox.handle)) return
                 if (!world.getRigidBody(x.Hitbox.handle)) return 
                 const pos = x.Hitbox.translation()
                 const rot = x.Hitbox.rotation()
@@ -621,16 +623,21 @@ definePageMeta({
                 x.Visual.updateMatrixWorld()
                 x.OBBWorld.copy(x.OBBLocal).applyMatrix4(x.Visual.matrixWorld)
             })
-            enemies.forEach((x)=>{
+            enemies.forEach((x) => {
+            if (!world.getRigidBody(x.Hitbox.handle)) return
+            try {
                 const lookVector = new THREE.Vector3()
-                .subVectors((!reloading)?plr.Visual.position:camera.position, x.Visual.position)
+                .subVectors((!reloading) ? plr.Visual.position : camera.position, x.Visual.position)
                 .normalize()
-                .multiplyScalar((!reloading)?x.Speed/10:5);
+                .multiplyScalar((!reloading) ? x.Speed / 10 : 5)
                 x.Hitbox.applyImpulse(lookVector, true)
-                if (checkCollision({OBBLocal:x.OBBLocal, OBBWorld:x.OBBWorld, Visual:x.Visual}, {OBBLocal:plr.OBBLocal, OBBWorld:plr.OBBWorld, Visual:plr.Visual}) && !reloading && iframes==0){
-                    iframes=120
-                    hp--
+                if (checkCollision({OBBLocal: x.OBBLocal, OBBWorld: x.OBBWorld, Visual: x.Visual}, {OBBLocal: plr.OBBLocal, OBBWorld: plr.OBBWorld, Visual: plr.Visual}) && !reloading && iframes == 0) {
+                iframes = 120
+                hp--
                 }
+            } catch(e) {
+                // rigid body was invalidated mid-frame
+            }
             })
 
             if (hp==3){
