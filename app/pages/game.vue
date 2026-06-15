@@ -82,7 +82,7 @@ definePageMeta({
     }
     const createdObjects: cubeholder[] = []
     const enemies: (enemy & cubeholder)[] = []
-    const terrainPieces: cubeholder[] = [];
+    const terrainPieces: (cubeholder&{Lifetime:number})[] = [];
 
     let points = ref(0)
     const isGameOver = ref(false)
@@ -158,7 +158,7 @@ definePageMeta({
                     OBBLocal: obbLocal,
                     OBBWorld: obbWorld,
                     Collider:collider,
-                    Lifetime:875
+                    Lifetime:2625
                 })
             }
             if (enemydata !== undefined){
@@ -630,7 +630,6 @@ definePageMeta({
                 if (checkCollision({OBBLocal:x.OBBLocal, OBBWorld:x.OBBWorld, Visual:x.Visual}, {OBBLocal:plr.OBBLocal, OBBWorld:plr.OBBWorld, Visual:plr.Visual}) && !reloading && iframes==0){
                     iframes=120
                     hp--
-
                 }
             })
 
