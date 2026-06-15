@@ -32,8 +32,9 @@
     <p class = "text-lg">Learn the game!</p>
   </div>
 
+  <div></div>
   <dialog id="tutorial" class="modal">
-    <div class="flex flex-col modal-box overflow-y-scroll h-100">
+    <div class="flex flex-col modal-box overflow-y-scroll h-100 bg-white dark:bg-black text-black dark:text-white">
       <p class="text-lg text-center font-bold">Welcome to Red Ball x Slope</p>
       <p class="py-2 text-center">Clicking the portal will grant you access to the game.</p>
       <p class="text-lg text-center font-bold">Objective</p>

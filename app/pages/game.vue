@@ -44,7 +44,7 @@
     <div class="modal" :class="{ 'modal-open': isGameOver }">
         <div class="modal-box bg-base-100/50">
         <h3 class="text-lg text-center font-bold">Game Over!</h3>
-        <p class="py-4 text-center">Your score is {{ Math.round(points)}}.</p>
+        <p class="py-4 text-center">Your score is {{ Math.round(currentScore)}}.</p>
         <div class="flex justify-center">
             <button class="btn m-2" @click="navigateTo('/dashboard', { external: true })">Return to dashboard</button>
             <button class="btn m-2" @click="reloadNuxtApp()">Retry</button>
@@ -84,11 +84,11 @@ definePageMeta({
     const enemies: (enemy & cubeholder)[] = []
     const terrainPieces: (cubeholder&{Lifetime:number})[] = [];
 
-    let points = ref(0)
+    let points = 0
     const isGameOver = ref(false)
     const supabase = useSupabaseClient()
     const user = useSupabaseUser()
-    const scoreToBeat = ref("")
+    const currentScore = ref(0)
     const svgWidth = ref(300)
     
 
@@ -591,9 +591,9 @@ definePageMeta({
                 const velocitycurrent = plr.Body.linvel()
                 const candidatex = Math.max(0.025,Math.abs(velocitycurrent.x)/100)
                 const candidatez = Math.max(0.025,Math.abs(velocitycurrent.z)/100)
-                points.value += (candidatex>=candidatez)?candidatex:candidatez
+                points += (candidatex>=candidatez)?candidatex:candidatez
                 const scoreboard = document.getElementById("id")
-                if (scoreboard)scoreboard.textContent = `${Math.round(points.value)}`
+                if (scoreboard)scoreboard.textContent = `${Math.round(points)}`
             }
             const playerPos = plr.Visual.position;
             if (playerPos.distanceTo(prev) < 150) {
@@ -642,7 +642,8 @@ definePageMeta({
             }
             if ((hp==0||plr.Visual.position.y<-40)&&!reloading){
                 reloading = true;
-                saveScore(supabase, user, points.value);
+                saveScore(supabase, user, points);
+                currentScore.value = points
                 for (let i=1;i<100;i++){
                     createObject({x: 0, y: 0, z: 0}, {x: plr.Visual.position.x+randInt(-1,1)/10000, y: plr.Visual.position.y+randInt(-1,1)/10000, z: plr.Visual.position.z+randInt(-1,1)/10000}, {x:0.3,y:0.3,z:0.3}, 0xFFFFFF, world, scene, 1, "a", "rb4.png")    
                 }
